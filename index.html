@@ -1,0 +1,22 @@
+<!--
+To change this template use Tools | Templates.
+-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html ng-app="store">
+<head>
+    <title></title>
+</head>
+<body ng-controller="StoreController as store">
+	<div ng-repeat="product in store.products">
+		<h1>{{store.product.name}}</h1>
+		<h2>${{store.product.price}}</h2>
+		<p>{{store.product.description}}</p>
+		<button ng-show="store.product.canPurchase">
+			Add to cart</button>
+	</div>
+</body>
+</html>
+<footer>
+	<script src="angular.js"></script>
+	<script src="app.js"></script>
+</footer>
