@@ -2,6 +2,7 @@ var http = require("http");
 var fs = require("fs");
 var url = require("url");
 var game = require("./game");
+var formidable = require("formidable");
 http.createServer(function(req,res){
     var reqUrl = url.parse(req.url);
     if(routes[reqUrl.path] === undefined){
@@ -52,16 +53,32 @@ routes['/'] = function(req,res){
 };
 
 routes['/start'] = function(req,res){
-    var creatorId = 5;
+    var form = new formidable.IncomingForm();
     var board = game.newGame();
-    game.addPlayer(creatorId,board);
+    form.parse(req,function(error,fields){
+        if(error)
+            return;
+        game.addPlayer(fields.playerId,board);
+
+    });
+    
     var boardId = board.id;
+    //Shouldnt reroute if game exists. Fix later
     this['/'+boardId] = function(req,res){
-        console.log("this worked");
-        res.end("You've Reached A Board");
-    }
+        var reqUrl = url.parse(req.url);
+        console.log(reqUrl.path);
+        var board = game.searchGame(reqUrl.path);
+        console.log(board);
+        res.end("welcome");
+    };
+    
+    
     res.end(boardId.toString());
 };
+
+
+
+
 routes['/search'] = function(req,res){
     res.end("Bar");
 };

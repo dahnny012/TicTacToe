@@ -21,6 +21,7 @@
 	app.controller("StartController",['$http',function($http){
 		this.gameStarted = false;
 		this.gameId = -1;
+		localStorage.setItem("playerId", "player1");
 		this.findOpponent = function(){
 			// send some sort of request.
 			// wait for node to find someone.
@@ -29,7 +30,12 @@
 		this.customGame = function(){
 			this.gameStarted = true;
 			this.gamecode = "gg";
-			var status = $http.get("/start").success(function(data){
+			
+			
+			
+			var status = $http.post("/start",{ 
+				playerId: localStorage.getItem("playerId")}).
+			success(function(data){
 				console.log(data);
 				this.gameId = data;
 			});
