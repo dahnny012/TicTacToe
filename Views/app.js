@@ -18,17 +18,23 @@
 		this.turn = false;
 	});
 	
-	app.controller("StartController",function(){
+	app.controller("StartController",['$http',function($http){
 		this.gameStarted = false;
+		this.gameId = -1;
 		this.findOpponent = function(){
 			// send some sort of request.
 			// wait for node to find someone.
 			// connect 
 		};
 		this.customGame = function(){
-			// Start game , give link to player
+			this.gameStarted = true;
+			this.gamecode = "gg";
+			var status = $http.get("/start").success(function(data){
+				console.log(data);
+				this.gameId = data;
+			});
 		};
-	});
+	}]);
 	
 	var game = init();
 
