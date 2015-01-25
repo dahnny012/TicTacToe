@@ -69,6 +69,14 @@ routes['/start'] = function(req,res){
         console.log(reqUrl.path);
         var board = game.searchGame(reqUrl.path);
         console.log(board);
+        form = new formidable.IncomingForm();
+        form.parse(req,function(error,fields){
+            if(error)
+                return;
+            board.lastMove = {x:fields.x,y:fields.y};
+            
+        });
+        
         res.end("welcome");
     };
     

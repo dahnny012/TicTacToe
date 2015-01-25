@@ -1,8 +1,9 @@
-var RANDOM = 10;
 var boards = {};
-
+function randomNum(){
+    return Math.floor(Math.random()*10000);
+}
 function newGame(){
-    var id = RANDOM;
+    var id = randomNum();
     if(boards[id] === undefined)
      boards[id] = new board(id);
     return boards[id];
