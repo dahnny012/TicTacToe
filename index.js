@@ -36,12 +36,13 @@ routes['/start'] = function(req,res){
         if(error)
             return;
         game.addPlayer(fields.playerId,board);
-
     });
     var boardId = board.id;
     if(this['/'+boardId] === undefined){
         this['/'+boardId] = handleGame;
         console.log("added handler");
+        console.log("New Board");
+        console.log(board);
     }
     res.end(boardId.toString());
 };
@@ -68,8 +69,11 @@ function handlePost(error,fields,board,res){
             break;
         case "sync":
             console.log("sending sync");
+            console.log("player "+ fields.playerId);
+            game.addPlayer(fields.playerId,board);
             res.end(JSON.stringify(board.history));
     }
+    console.log(board);
 }
 
 

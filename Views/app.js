@@ -1,8 +1,11 @@
 (function(){
 	var settings = {
 		url:document.URL,
-		boardId:document.URL.split("/").pop()
+		boardId:document.URL.split("/").pop(),
+		playerId: Math.floor(Math.random()*10000)
 	};
+	
+	
 	var app = angular.module("App",[]);
 	
 	
@@ -12,12 +15,55 @@
 			templateUrl:"Views/game.html"
 		}
 	});
+	
+	app.controller("StartController",['$http',function($http){
+		this.gameStarted = false;
+		this.gameId = -1;
+		this.msg = "Welcome, how would you like to play?"
+		
+		//localStorage.setItem("playerId", randomId);
+		console.log("Player ID " + settings.playerId);
+		if(settings.boardId !== ""){
+				this.gameId = settings.boardId;
+				this.gameStarted = true;
+				this.msg = "Game is in Progress";
+				
+				// Connect to game.
+				$http.post("/"+settings.boardId,
+				{type:"sync",playerId:settings.playerId})
+				.success(function(error,data){
+					console.log(data);
+				});
+		}
+		// This is temporary
+		
+		this.findOpponent = function(){
+			// send some sort of request.
+			// wait for node to find someone.
+			// connect 
+			alert(settings.boardID);
+		};
+		this.customGame = function(){
+			if(this.gameStarted == true)
+				return;
+			this.gameStarted = true;
+			var status = $http.post("/start",{ 
+				playerId: settings.playerId})
+			.success(function(data){
+				console.log("Board id "+ data);
+				settings.boardId = data;
+			});
+		};
+	}]);
+	
 	app.controller("GameController",["$http",function($http){
 		this.view = game;
+		
 		this.turn = 0;
 		this.gameOver = false;
 		// Depends on who made it;
 		this.yourTurn = true;
+		
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
 			&& !this.gameOver && this.yourTurn){
@@ -77,7 +123,7 @@
 		this.sendMove = function(x,y,gameID){
 			$http.post("/"+gameID,
 			{type:"move",
-			playerId:localStorage.getItem("playerId"),
+			playerId:settings.playerId,
 			x:x,y:y}).success(
 			function(data){
 				console.log(data);
@@ -91,36 +137,6 @@
 		
 	}]);
 	
-	app.controller("StartController",['$http',function($http){
-		this.gameStarted = false;
-		this.gameId = -1;
-		this.msg = "Welcome, how would you like to play?"
-		if(settings.boardId !== ""){
-				this.gameId = settings.boardId;
-				this.gameStarted = true;
-				this.msg = "Game is in Progress";
-		}
-		// This is temporary
-		var randomId = Math.floor(Math.random()*10000);
-		localStorage.setItem("playerId", randomId);
-		this.findOpponent = function(){
-			// send some sort of request.
-			// wait for node to find someone.
-			// connect 
-			alert(settings.boardID);
-		};
-		this.customGame = function(){
-			this.gameStarted = true;
-			this.gamecode = "gg";
-			
-			var status = $http.post("/start",{ 
-				playerId: localStorage.getItem("playerId")}).
-			success(function(data){
-				console.log(data);
-				settings.boardId = data;
-			});
-		};
-	}]);
 	
 	var game = init();
 

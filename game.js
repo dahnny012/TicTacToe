@@ -20,7 +20,7 @@ function makeRelative(link){
 
 function board(id){
     this.id=id;
-    this.players = [2];
+    this.players = new Array(2);
     // moves placed in here.
     this.history = [];
     return this;
@@ -28,8 +28,10 @@ function board(id){
 
 function addPlayer(playerId,board){
     for(var i=0; i<2; i++){
-        if(board.players[i] !== undefined){
+        if(board.players[i] === undefined){
+            console.log("Adding player");
             board.players[i] = playerId;
+            console.log(board);
             break;
         }
     }
