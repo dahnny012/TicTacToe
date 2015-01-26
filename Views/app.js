@@ -5,7 +5,12 @@
 		playerId: Math.floor(Math.random()*10000)
 	};
 	
-	
+	var game = {
+		started:false,
+		turn:0,
+		playerTurn:false,
+		over:false
+	};
 	var app = angular.module("App",[]);
 	
 	
@@ -17,34 +22,13 @@
 	});
 	
 	app.controller("StartController",['$http','$interval',function($http,$interval){
-		this.gameStarted = false;
-		this.gameId = -1;
+		game.started = false;
 		this.msg = "Welcome, how would you like to play?"
-		
-		//localStorage.setItem("playerId", randomId);
 		console.log("Player ID " + settings.playerId);
 		if(settings.boardId !== ""){
-				this.gameId = settings.boardId;
-				this.gameStarted = true;
+				game.started = true;
 				this.msg = "Game is in Progress";
-				
-				// Connect to game.
-				$http.post("/"+settings.boardId,
-				{type:"sync",playerId:settings.playerId})
-				.success(function(data){
-					console.log(data);
-				});
-				
-				var update = function(http,row,settings){
-				$interval(function(){
-					http.post("/"+settings.boardId,{type:"update"}).success(
-						function(data){
-							console.log(data);
-						});			
-				},200);};
-				update($http,this.view,settings);
 		}
-		// This is temporary
 		
 		this.findOpponent = function(){
 			// send some sort of request.
@@ -53,51 +37,49 @@
 			alert(settings.boardID);
 		};
 		this.customGame = function(){
-			if(this.gameStarted == true)
+			if(game.started == true)
 				return;
-			this.gameStarted = true;
+			game.started = true;
+			game.playerTurn = true;
 			var status = $http.post("/start",{ 
 				playerId: settings.playerId})
 			.success(function(data){
 				console.log("Board id "+ data);
 				settings.boardId = data;
 			});
-			
-			var update = function(http,row,settings){
-				$interval(function(){
-					http.post("/"+settings.boardId,{type:"update"}).success(
-						function(data){
-							console.log(data);
-						});			
-				},200);
-			};
-			update($http,this.view,settings);
 		};
 	}]);
 	
-	app.controller("GameController",["$http",
-		function($http){
-		this.view = game;
+	app.controller("GameController",["$http","$interval",
+		function($http,$interval){
+		this.view = board;
 		
-		this.turn = 0;
-		this.gameOver = false;
-		// Depends on who made it;
-		this.yourTurn = true;
+		var update = function(http,row,settings){
+			$interval(function(){
+				if(game.started){
+				http.post("/"+settings.boardId,{type:"update"}).success(
+					function(data){
+						console.log(data);
+					});
+				}
+			},300);};
+		update($http,this.view,settings);
 		
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
-			&& !this.gameOver && this.yourTurn){
-				var player =  (this.turn % 2 ? "O" : "X");
+			&& !game.over && game.playerTurn){
+				var player =  (game.turn % 2 ? "O" : "X");
 				this.playOne(player,x,y);
 				this.checkGameOver();
 			}
-		}
+		};
+		
 		this.playOne = function(player,x,y){
 			console.log(this.view);
 			console.log("X " + x +" Y " + y);
 			this.view[x][y].square = player;
-			this.turn++;
-			this.yourTurn = false;
+			game.turn++;
+			game.playerTurn = false;
 			this.sendMove(x,y,settings.boardId);
 		};
 		
@@ -111,7 +93,7 @@
 					// Diags
 			this.checkBackslash(row);
 			this.checkForwardSlash(row);
-			if(this.gameOver)
+			if(game.over)
 				console.log("GG");
 		};
 		
@@ -119,26 +101,26 @@
 			if(row[x][0].square === row[x][1].square 
 			&& row[x][1].square === row[x][2].square
 			&& row[x][0].square !== "")
-				this.gameOver = true;
+				game.over = true;
 		};
 		this.checkCol = function(row,x){
 			if(row[0][x].square === row[1][x].square
 			&& row[1][x].square === row[2][x].square
 			&& row[0][x].square !== "")
-				this.gameOver = true;
+				game.over = true;
 		};
 		this.checkBackslash = function(row){
 			if(row[0][0].square === row[1][1].square 
 			&& row[1][1].square === row[2][2].square 
 			&& row[0][0].square !== "")
-				this.gameOver = true;
+				game.over = true;
 		};
 		
 		this.checkForwardSlash = function(row){
 			if(row[0][2].square === row[1][1].square 
 			&& row[1][1].square === row[2][0].square 
 			&& row[0][2].square !== "")
-				this.gameOver = true;
+				game.over = true;
 		}
 		this.sendMove = function(x,y,gameID){
 			$http.post("/"+gameID,
@@ -148,13 +130,12 @@
 			function(data){
 				console.log(data);
 			});
-			// setTimeout for a update.
 		};
 		
 	}]);
 	
 	
-	var game = init();
+	var board = init();
 
 	function init(){
 		var array = [3];
