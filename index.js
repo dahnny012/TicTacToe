@@ -21,6 +21,79 @@ http.createServer(function(req,res){
     routes[reqUrl.path](req,res);
 }).listen(80);
 
+var routes = {};
+routes['/'] = function(req,res){
+  fs.readFile('Views/index.html',function(err,data){
+      res.writeHead(200,mimeType("index.html"));
+      res.end(data);
+  });  
+};
+
+routes['/start'] = function(req,res){
+    var form = new formidable.IncomingForm();
+    var board = game.newGame();
+    form.parse(req,function(error,fields){
+        if(error)
+            return;
+        game.addPlayer(fields.playerId,board);
+
+    });
+    var boardId = board.id;
+    if(this['/'+boardId] === undefined){
+        this['/'+boardId] = handleGame;
+        console.log("added handler");
+    }
+    res.end(boardId.toString());
+};
+
+routes['/search'] = function(req,res){
+    res.end("Bar");
+};
+
+
+
+function handlePost(error,fields,board,res){
+    if(error)
+        return;
+    switch(fields.type){
+        case "move":
+            console.log("Making a move on board");
+            var move ={playerId:fields.playerId,
+            x:fields.x,y:fields.y};
+            board.history.push(move);
+            break;
+        case "update":
+            console.log("sending update");
+            res.end(JSON.stringify(board.history.slice(-1)));
+            break;
+        case "sync":
+            console.log("sending sync");
+            res.end(JSON.stringify(board.history));
+    }
+}
+
+
+function handleGame(req,res){
+    var reqUrl = url.parse(req.url);
+    var board = game.searchGame(reqUrl.path);
+    console.log(board);
+    var form = new formidable.IncomingForm();
+    //console.log(req.method);
+    if(req.method === 'POST'){
+        console.log("request is POST")
+        form.parse(req,function(error,fields){
+            handlePost(error,fields,board,res);
+            console.log(board);
+        });
+    }
+    else{
+        fs.readFile('Views/index.html',function(err,data){
+            res.writeHead(200,mimeType("index.html"));
+            res.end(data);
+        });
+    }
+};
+
 
 function mimeType(link){
     link = link.split(".");
@@ -42,51 +115,3 @@ function makeRelative(link){
         return link.slice(1);
 }
 
-
-
-var routes = {};
-routes['/'] = function(req,res){
-  fs.readFile('index.html',function(err,data){
-      res.writeHead(200,mimeType("index.html"));
-      res.end(data);
-  });  
-};
-
-routes['/start'] = function(req,res){
-    var form = new formidable.IncomingForm();
-    var board = game.newGame();
-    form.parse(req,function(error,fields){
-        if(error)
-            return;
-        game.addPlayer(fields.playerId,board);
-
-    });
-    
-    var boardId = board.id;
-    //Shouldnt reroute if game exists. Fix later
-    this['/'+boardId] = function(req,res){
-        var reqUrl = url.parse(req.url);
-        console.log(reqUrl.path);
-        var board = game.searchGame(reqUrl.path);
-        console.log(board);
-        form = new formidable.IncomingForm();
-        form.parse(req,function(error,fields){
-            if(error)
-                return;
-            board.lastMove = {x:fields.x,y:fields.y};
-            
-        });
-        
-        res.end("welcome");
-    };
-    
-    
-    res.end(boardId.toString());
-};
-
-
-
-
-routes['/search'] = function(req,res){
-    res.end("Bar");
-};

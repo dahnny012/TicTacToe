@@ -21,7 +21,8 @@ function makeRelative(link){
 function board(id){
     this.id=id;
     this.players = [2];
-    this.lastMove={};
+    // moves placed in here.
+    this.history = [];
     return this;
 };
 

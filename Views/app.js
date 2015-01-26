@@ -1,5 +1,17 @@
 (function(){
+	var settings = {
+		url:document.URL,
+		boardId:document.URL.split("/").pop()
+	};
 	var app = angular.module("App",[]);
+	
+	
+	app.directive("game",function(){
+		return {
+			restrict:'E',
+			templateUrl:"Views/game.html"
+		}
+	});
 	app.controller("GameController",["$http",function($http){
 		this.view = game;
 		this.turn = 0;
@@ -8,7 +20,7 @@
 		this.yourTurn = true;
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
-			&& !this.gameOver && this.youTurn){
+			&& !this.gameOver && this.yourTurn){
 				var player =  (this.turn % 2 ? "O" : "X");
 				this.playOne(player,x,y);
 				this.checkGameOver();
@@ -20,7 +32,7 @@
 			this.view[x][y].square = player;
 			this.turn++;
 			this.yourTurn = false;
-			this.sendMove(x,y,this.gameID);
+			this.sendMove(x,y,settings.boardId);
 		};
 		
 		this.checkGameOver = function(){
@@ -63,25 +75,39 @@
 				this.gameOver = true;
 		}
 		this.sendMove = function(x,y,gameID){
-			$http.post("/"+gameID,{x:x,y:y}).success(function(data){
+			$http.post("/"+gameID,
+			{type:"move",
+			playerId:localStorage.getItem("playerId"),
+			x:x,y:y}).success(
+			function(data){
 				console.log(data);
 			});
-			// wait for info.
+			// setTimeout for a update.
 		};
 		
 		this.sync = function(x,y,gameID){
-			
+			return;
 		};
+		
 	}]);
 	
 	app.controller("StartController",['$http',function($http){
 		this.gameStarted = false;
 		this.gameId = -1;
-		localStorage.setItem("playerId", "player1");
+		this.msg = "Welcome, how would you like to play?"
+		if(settings.boardId !== ""){
+				this.gameId = settings.boardId;
+				this.gameStarted = true;
+				this.msg = "Game is in Progress";
+		}
+		// This is temporary
+		var randomId = Math.floor(Math.random()*10000);
+		localStorage.setItem("playerId", randomId);
 		this.findOpponent = function(){
 			// send some sort of request.
 			// wait for node to find someone.
 			// connect 
+			alert(settings.boardID);
 		};
 		this.customGame = function(){
 			this.gameStarted = true;
@@ -91,7 +117,7 @@
 				playerId: localStorage.getItem("playerId")}).
 			success(function(data){
 				console.log(data);
-				this.gameId = data;
+				settings.boardId = data;
 			});
 		};
 	}]);

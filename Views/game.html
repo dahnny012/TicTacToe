@@ -1,0 +1,5 @@
+<div class="row" ng-repeat="rows in app.view">
+	<div  class="box" ng-repeat="cols in rows" ng-click="app.play(cols.x,cols.y)">
+			{{cols.square}}
+	</div>
+</div>
