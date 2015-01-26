@@ -65,12 +65,16 @@ function handlePost(error,fields,board,res){
             break;
         case "update":
             console.log("sending update");
+            res.writeHead(200,"application/json");
+            console.log(JSON.stringify(board.history.slice(-1)));
             res.end(JSON.stringify(board.history.slice(-1)));
             break;
         case "sync":
             console.log("sending sync");
             console.log("player "+ fields.playerId);
             game.addPlayer(fields.playerId,board);
+            res.writeHead(200,"application/json");
+            console.log(JSON.stringify(board.history));
             res.end(JSON.stringify(board.history));
     }
     console.log(board);

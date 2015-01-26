@@ -16,7 +16,7 @@
 		}
 	});
 	
-	app.controller("StartController",['$http',function($http){
+	app.controller("StartController",['$http','$interval',function($http,$interval){
 		this.gameStarted = false;
 		this.gameId = -1;
 		this.msg = "Welcome, how would you like to play?"
@@ -31,9 +31,18 @@
 				// Connect to game.
 				$http.post("/"+settings.boardId,
 				{type:"sync",playerId:settings.playerId})
-				.success(function(error,data){
+				.success(function(data){
 					console.log(data);
 				});
+				
+				var update = function(http,row,settings){
+				$interval(function(){
+					http.post("/"+settings.boardId,{type:"update"}).success(
+						function(data){
+							console.log(data);
+						});			
+				},200);};
+				update($http,this.view,settings);
 		}
 		// This is temporary
 		
@@ -53,10 +62,21 @@
 				console.log("Board id "+ data);
 				settings.boardId = data;
 			});
+			
+			var update = function(http,row,settings){
+				$interval(function(){
+					http.post("/"+settings.boardId,{type:"update"}).success(
+						function(data){
+							console.log(data);
+						});			
+				},200);
+			};
+			update($http,this.view,settings);
 		};
 	}]);
 	
-	app.controller("GameController",["$http",function($http){
+	app.controller("GameController",["$http",
+		function($http){
 		this.view = game;
 		
 		this.turn = 0;
@@ -129,10 +149,6 @@
 				console.log(data);
 			});
 			// setTimeout for a update.
-		};
-		
-		this.sync = function(x,y,gameID){
-			return;
 		};
 		
 	}]);
