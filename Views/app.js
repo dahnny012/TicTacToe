@@ -57,30 +57,6 @@
 		function($http,$interval){
 		this.view = board;
 		var lastMove = {x:-1,y:-1};
-		// Connect
-		var update = function(http,row,settings){
-			$interval(function(){
-				if(game.started){
-				http.post("/"+settings.boardId,{type:"update"}).success(
-					function(data){
-						console.log(data);
-						if(data === undefined || data.length < 1)
-							return;
-						if(data.playerId == settings.playerId)
-							return;
-						if(data.x == lastMove.x && data.y == lastMove.y)
-							return
-						if(data.x !== undefined && data.y !== undefined){
-							console.log("Data added");
-							row[data.x][data.y].square = data.move;
-							lastMove = data;
-							game.playerTurn = true;
-							game.turn++;
-						}
-					});
-				}
-			},300);};
-		update($http,this.view,settings);
 		
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
@@ -101,40 +77,27 @@
 			this.sendMove(x,y,settings.boardId,player);
 		};
 		
-		this.checkGameOver = function(){
-			var row = this.view;
-			for(var x=0; x<3; x++){
-					// Rows 
-					this.checkRow(row,x);
-					this.checkCol(row,x);
-			}
-					// Diags
-			this.checkBackslash(row);
-			this.checkForwardSlash(row);
-			if(game.over)
-				console.log("GG");
-		};
 		
-		this.checkRow = function(row,x){
+		 function checkRow(row,x){
 			if(row[x][0].square === row[x][1].square 
 			&& row[x][1].square === row[x][2].square
 			&& row[x][0].square !== "")
 				game.over = true;
 		};
-		this.checkCol = function(row,x){
+		function checkCol(row,x){
 			if(row[0][x].square === row[1][x].square
 			&& row[1][x].square === row[2][x].square
 			&& row[0][x].square !== "")
 				game.over = true;
 		};
-		this.checkBackslash = function(row){
+		function checkBackslash(row){
 			if(row[0][0].square === row[1][1].square 
 			&& row[1][1].square === row[2][2].square 
 			&& row[0][0].square !== "")
 				game.over = true;
 		};
 		
-		this.checkForwardSlash = function(row){
+		function checkForwardSlash(row){
 			if(row[0][2].square === row[1][1].square 
 			&& row[1][1].square === row[2][0].square 
 			&& row[0][2].square !== "")
@@ -149,6 +112,45 @@
 				console.log(data);
 			});
 		};
+		
+		this.checkGameOver = function(){
+			var row = this.view;
+			for(var x=0; x<3; x++){
+					// Rows 
+					checkRow(row,x);
+					checkCol(row,x);
+			}
+					// Diags
+			checkBackslash(row);
+			checkForwardSlash(row);
+			if(game.over)
+				game.started == false;
+		};
+		var update = function(http,row,settings,foo){
+			$interval(function(){
+				if(game.started && !game.over){
+				http.post("/"+settings.boardId,{type:"update"}).success(
+					function(data){
+						console.log(data);
+						if(data === undefined || data.length < 1)
+							return;
+						if(data.playerId == settings.playerId)
+							return;
+						if(data.x == lastMove.x && data.y == lastMove.y)
+							return
+						if(data.x !== undefined && data.y !== undefined){
+							console.log("Data added");
+							row[data.x][data.y].square = data.move;
+							lastMove = data;
+							game.playerTurn = true;
+							game.turn++;
+							foo.checkGameOver();
+						}
+					});
+				}
+			},300);};
+		var foo = this;
+		update($http,this.view,settings,foo);
 		
 	}]);
 	

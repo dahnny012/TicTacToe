@@ -63,6 +63,7 @@ function handlePost(error,fields,board,res){
             x:fields.x,y:fields.y,move:fields.move};
             board.history.push(move);
             board.lastMove = move;
+            res.end("Move ok");
             break;
         case "update":
             console.log("sending update");
