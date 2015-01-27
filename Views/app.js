@@ -34,10 +34,12 @@
 		}
 		
 		this.findOpponent = function(){
-			// send some sort of request.
-			// wait for node to find someone.
-			// connect 
-			alert("Not implemented");
+			var promise = $interval(function(){
+				$http.post("/search",{playerId:settings.playerId})
+				.success(function(data){
+					console.log(data);
+				});
+			},300);
 		};
 		this.customGame = function(controller){
 			if(game.started == true)

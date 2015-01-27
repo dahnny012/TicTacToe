@@ -3,6 +3,8 @@ var fs = require("fs");
 var url = require("url");
 var game = require("./game");
 var formidable = require("formidable");
+var queue = require("./queue");
+
 http.createServer(function(req,res){
     var reqUrl = url.parse(req.url);
     if(routes[reqUrl.path] === undefined){
@@ -48,7 +50,35 @@ routes['/start'] = function(req,res){
 };
 
 routes['/search'] = function(req,res){
-    res.end("Bar");
+    var form = new formidable.IncomingForm();
+    form.parse(req,function(error,fields){
+        if(error)
+            return;
+        // Get Queue
+        var current = queue.getQueue();
+        // If you havent found a match add yourself.
+        if(current.matches[fields.playerId] === undefined){
+            current.addPlayer(fields.playerId);
+        }
+        // If a match was found write i found one and give u the info.
+        else{
+            var info = {boardId:current.matches[fields.playerId]};
+            req.end(JSON.stringify(info));
+            return;
+        }
+        
+        // Search for someone.
+        var search = current.findOpponent(fields.playerId);
+        if(search.length > 0){
+            var board = game.newGame();
+            current.match[fields.playerId] =board.id;
+            current.match[search.pop()] = board.id;
+            info = {playerToStart:fields.playerId,boardId:board.id};
+            res.end(JSON.stringify(info));
+            return;
+        }
+    });
+    res.end("Finding");
 };
 
 
@@ -79,6 +109,7 @@ function handlePost(error,fields,board,res){
             res.writeHead(200,"application/json");
             console.log(JSON.stringify(board.history));
             res.end(JSON.stringify(board.history));
+            break;
         case "end":
             console.log("Ending game");
             if(board.players.indexOf(fields.playerId) >= 0)
@@ -88,7 +119,6 @@ function handlePost(error,fields,board,res){
                 board.clear();
             }
             res.end("End");
-                
     }
     console.log(board);
 }
