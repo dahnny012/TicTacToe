@@ -10,7 +10,9 @@
 		<br>
 		<button ng-click="start.findOpponent()">Random Opponent</button>
 		<br>
-		<button ng-click="start.customGame()">Custom game</button>
+		<button ng-click="start.customGame(start)">Custom game</button>
+		<br>
+		<input ng-model="gameId" type="text" placeholder="type game id"></input><button ng-click="start.join(gameId)">Join</button>
 		<game ng-hide="start.gameStarted()==false" ng-controller="GameController as app">
 		</game>
 	</section>

@@ -68,7 +68,8 @@ function handlePost(error,fields,board,res){
         case "update":
             console.log("sending update");
             res.writeHead(200,"application/json");
-            //console.log(JSON.stringify(board.history.slice(-1)));
+            // Temporary.
+            game.addPlayer(fields.playerId,board);
             res.end(JSON.stringify(board.lastMove));
             break;
         case "sync":
@@ -78,6 +79,15 @@ function handlePost(error,fields,board,res){
             res.writeHead(200,"application/json");
             console.log(JSON.stringify(board.history));
             res.end(JSON.stringify(board.history));
+        case "end":
+            console.log("Ending game");
+            if(board.players.indexOf(fields.playerId) >= 0)
+                board.endCounter++;
+            if(board.endCounter >= 2){
+                console.log("Clearing")
+                board.clear();
+            }
+                
     }
     console.log(board);
 }
@@ -93,7 +103,6 @@ function handleGame(req,res){
         console.log("request is POST")
         form.parse(req,function(error,fields){
             handlePost(error,fields,board,res);
-            console.log(board);
         });
     }
     else{

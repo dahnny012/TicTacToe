@@ -39,7 +39,7 @@
 			// connect 
 			alert(settings.boardID);
 		};
-		this.customGame = function(){
+		this.customGame = function(controller){
 			if(game.started == true)
 				return;
 			game.started = true;
@@ -49,7 +49,12 @@
 			.success(function(data){
 				console.log("Board id "+ data);
 				settings.boardId = data;
+				controller.msg = "Your gamelink " + "danhnguyen.ddns.net/" + settings.boardId;
 			});
+		};
+		
+		this.join=  function(gameID){
+			location.href="/"+gameID;
 		};
 	}]);
 	
@@ -103,6 +108,7 @@
 			&& row[0][2].square !== "")
 				game.over = true;
 		}
+		
 		this.sendMove = function(x,y,gameID,player){
 			$http.post("/"+gameID,
 			{type:"move",
@@ -115,23 +121,41 @@
 		
 		this.checkGameOver = function(){
 			var row = this.view;
+			var draw = true;
 			for(var x=0; x<3; x++){
 					// Rows 
 					checkRow(row,x);
 					checkCol(row,x);
+					// Check Draws
+					for(var y=0; y<3; y++){
+						if(row[x][y].square === "")
+							draw = false;
+					}
 			}
 					// Diags
 			checkBackslash(row);
 			checkForwardSlash(row);
-			if(game.over)
+			if(draw)
+				game.over = true;
+			if(game.over){
 				game.started == false;
+				alert("Game is over");
+				$http.post("/"+settings.boardId,
+				{type:"end",
+				playerId:settings.playerId}).
+				success(
+				function(data){
+					console.log(data);
+				});
+			}
 		};
 		var update = function(http,row,settings,foo){
-			$interval(function(){
+			var promise = $interval(function(){
 				if(game.started && !game.over){
-				http.post("/"+settings.boardId,{type:"update"}).success(
+				http.post("/"+settings.boardId,{type:"update",playerId:settings.playerId})
+				.success(
 					function(data){
-						console.log(data);
+						console.log(game.over);
 						if(data === undefined || data.length < 1)
 							return;
 						if(data.playerId == settings.playerId)
@@ -148,7 +172,10 @@
 						}
 					});
 				}
-			},300);};
+			},300);
+			if(game.over)
+				$interval.cancel(promise);
+		};
 		var foo = this;
 		update($http,this.view,settings,foo);
 		
