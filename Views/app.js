@@ -40,6 +40,13 @@
 					console.log(data);
 					if(data.boardId !== undefined){
 						alert("found a player");
+						/// After you recieve a board ID
+						if(game.started == true)
+							return;
+						game.started = true;
+						if(data.playerToStart !== undefined)
+							game.playerTurn = true;
+						settings.boardId = data.boardId;
 						$interval.cancel(promise);
 					}
 				});
@@ -61,6 +68,9 @@
 		
 		this.join=  function(gameID){
 			location.href="/"+gameID;
+		};
+		function start(){
+			
 		};
 	}]);
 	

@@ -7,7 +7,9 @@ var queue = require("./queue");
 
 http.createServer(function(req,res){
     var reqUrl = url.parse(req.url);
+    console.log(reqUrl.path);
     if(routes[reqUrl.path] === undefined){
+        console.log("Undefined Route");
         reqUrl.path = makeRelative(reqUrl.path);
         fs.readFile(reqUrl.path,function(err,data){
             if(err){
@@ -20,6 +22,7 @@ http.createServer(function(req,res){
         });
         return;
     }
+    console.log("Found a route");
     routes[reqUrl.path](req,res);
 }).listen(80);
 
@@ -40,8 +43,8 @@ routes['/start'] = function(req,res){
         game.addPlayer(fields.playerId,board);
     });
     var boardId = board.id;
-    if(this['/'+boardId] === undefined){
-        this['/'+boardId] = handleGame;
+    if(routes['/'+boardId] === undefined){
+        routes['/'+boardId] = handleGame;
         console.log("added handler");
         console.log("New Board");
         console.log(board);
@@ -64,6 +67,7 @@ routes['/search'] = function(req,res){
         else{
             console.log("Other player found match");
             var info = {boardId:current.matches[fields.playerId]};
+            current.matches[fields.playerId] === undefined;
             res.end(JSON.stringify(info));
         }
         console.log("In Queue");
@@ -73,6 +77,11 @@ routes['/search'] = function(req,res){
         if(search.length > 0){
             console.log("FOUND A MATCH");
             var board = game.newGame();
+            if(routes['/'+board.id] === undefined){
+                routes['/'+board.id] = handleGame;
+                console.log("Creating a route");
+                console.log(this['/'+board.id]);
+            }
             current.matches[fields.playerId] =board.id;
             current.matches[search.pop()] = board.id;
             info = {playerToStart:fields.playerId,boardId:board.id};
