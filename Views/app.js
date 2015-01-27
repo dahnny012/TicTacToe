@@ -37,7 +37,7 @@
 			// send some sort of request.
 			// wait for node to find someone.
 			// connect 
-			alert(settings.boardID);
+			alert("Not implemented");
 		};
 		this.customGame = function(controller){
 			if(game.started == true)
@@ -145,7 +145,16 @@
 				playerId:settings.playerId}).
 				success(
 				function(data){
-					console.log(data);
+					console.log("Resetting the board");
+					for(var y=0; y<3; y++){
+						for(var x=0; x<3; x++){
+							row[y][x].square = "";
+						}
+					}
+					game.started == true;
+					game.over = false;
+					lastMove = {x:-1,y:-1};
+					
 				});
 			}
 		};
@@ -161,7 +170,7 @@
 						if(data.playerId == settings.playerId)
 							return;
 						if(data.x == lastMove.x && data.y == lastMove.y)
-							return
+							return;
 						if(data.x !== undefined && data.y !== undefined){
 							console.log("Data added");
 							row[data.x][data.y].square = data.move;

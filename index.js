@@ -87,6 +87,7 @@ function handlePost(error,fields,board,res){
                 console.log("Clearing")
                 board.clear();
             }
+            res.end("End");
                 
     }
     console.log(board);
