@@ -63,7 +63,7 @@ routes['/search'] = function(req,res){
         // If a match was found write i found one and give u the info.
         else{
             var info = {boardId:current.matches[fields.playerId]};
-            req.end(JSON.stringify(info));
+            res.end(JSON.stringify(info));
             return;
         }
         
@@ -71,8 +71,8 @@ routes['/search'] = function(req,res){
         var search = current.findOpponent(fields.playerId);
         if(search.length > 0){
             var board = game.newGame();
-            current.match[fields.playerId] =board.id;
-            current.match[search.pop()] = board.id;
+            current.matches[fields.playerId] =board.id;
+            current.matches[search.pop()] = board.id;
             info = {playerToStart:fields.playerId,boardId:board.id};
             res.end(JSON.stringify(info));
             return;
