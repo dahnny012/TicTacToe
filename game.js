@@ -23,6 +23,7 @@ function board(id){
     this.players = new Array(2);
     // moves placed in here.
     this.history = [];
+    this.lastMove = undefined;
     return this;
 };
 

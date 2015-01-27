@@ -60,14 +60,15 @@ function handlePost(error,fields,board,res){
         case "move":
             console.log("Making a move on board");
             var move ={playerId:fields.playerId,
-            x:fields.x,y:fields.y};
+            x:fields.x,y:fields.y,move:fields.move};
             board.history.push(move);
+            board.lastMove = move;
             break;
         case "update":
             console.log("sending update");
             res.writeHead(200,"application/json");
-            console.log(JSON.stringify(board.history.slice(-1)));
-            res.end(JSON.stringify(board.history.slice(-1)));
+            //console.log(JSON.stringify(board.history.slice(-1)));
+            res.end(JSON.stringify(board.lastMove));
             break;
         case "sync":
             console.log("sending sync");

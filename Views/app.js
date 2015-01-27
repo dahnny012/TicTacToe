@@ -23,6 +23,9 @@
 	
 	app.controller("StartController",['$http','$interval',function($http,$interval){
 		game.started = false;
+		this.gameStarted = function(){
+			return game.started;
+		};
 		this.msg = "Welcome, how would you like to play?"
 		console.log("Player ID " + settings.playerId);
 		if(settings.boardId !== ""){
@@ -53,13 +56,27 @@
 	app.controller("GameController",["$http","$interval",
 		function($http,$interval){
 		this.view = board;
-		
+		var lastMove = {x:-1,y:-1};
+		// Connect
 		var update = function(http,row,settings){
 			$interval(function(){
 				if(game.started){
 				http.post("/"+settings.boardId,{type:"update"}).success(
 					function(data){
 						console.log(data);
+						if(data === undefined || data.length < 1)
+							return;
+						if(data.playerId == settings.playerId)
+							return;
+						if(data.x == lastMove.x && data.y == lastMove.y)
+							return
+						if(data.x !== undefined && data.y !== undefined){
+							console.log("Data added");
+							row[data.x][data.y].square = data.move;
+							lastMove = data;
+							game.playerTurn = true;
+							game.turn++;
+						}
 					});
 				}
 			},300);};
@@ -68,7 +85,8 @@
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
 			&& !game.over && game.playerTurn){
-				var player =  (game.turn % 2 ? "O" : "X");
+				console.log(game.turn);
+				var player =  (game.turn % 2 == 0? "X" : "O");
 				this.playOne(player,x,y);
 				this.checkGameOver();
 			}
@@ -80,7 +98,7 @@
 			this.view[x][y].square = player;
 			game.turn++;
 			game.playerTurn = false;
-			this.sendMove(x,y,settings.boardId);
+			this.sendMove(x,y,settings.boardId,player);
 		};
 		
 		this.checkGameOver = function(){
@@ -122,11 +140,11 @@
 			&& row[0][2].square !== "")
 				game.over = true;
 		}
-		this.sendMove = function(x,y,gameID){
+		this.sendMove = function(x,y,gameID,player){
 			$http.post("/"+gameID,
 			{type:"move",
 			playerId:settings.playerId,
-			x:x,y:y}).success(
+			x:x,y:y,move:player}).success(
 			function(data){
 				console.log(data);
 			});
