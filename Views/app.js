@@ -38,6 +38,10 @@
 				$http.post("/search",{playerId:settings.playerId})
 				.success(function(data){
 					console.log(data);
+					if(data.boardId !== undefined){
+						alert("found a player");
+						$interval.cancel(promise);
+					}
 				});
 			},300);
 		};

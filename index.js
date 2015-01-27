@@ -62,23 +62,26 @@ routes['/search'] = function(req,res){
         }
         // If a match was found write i found one and give u the info.
         else{
+            console.log("Other player found match");
             var info = {boardId:current.matches[fields.playerId]};
             res.end(JSON.stringify(info));
-            return;
         }
-        
+        console.log("In Queue");
+        console.log(current.players);
         // Search for someone.
         var search = current.findOpponent(fields.playerId);
         if(search.length > 0){
+            console.log("FOUND A MATCH");
             var board = game.newGame();
             current.matches[fields.playerId] =board.id;
             current.matches[search.pop()] = board.id;
             info = {playerToStart:fields.playerId,boardId:board.id};
             res.end(JSON.stringify(info));
-            return;
+        }else{
+            res.end("Finding");
         }
     });
-    res.end("Finding");
+
 };
 
 
