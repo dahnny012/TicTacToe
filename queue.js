@@ -3,7 +3,7 @@ var queue = undefined;
 function getQueue(){
     if(queue === undefined)
         queue = new makeQueue();
-    //setInterval(queue.manageQueue,500,queue);
+    setInterval(manageQueue,500,queue);
     return queue;
 };
 
@@ -13,11 +13,11 @@ function makeQueue(){
     this.addPlayer = function(playerId){
         var search = this.players.indexOf(playerId);
         if(search !== -1){
-            this.watchList[search].pingTime = 2000;
+            this.watchList[search].pingTime = Math.floor(new Date());
             return this;
         }
          this.players.push(playerId);
-         this.watchList.push({playerId:playerId,pingTime:1000});
+         this.watchList.push({playerId:playerId,pingTime:new Date()});
     };
     
     this.findOpponent=function(playerId){
@@ -39,10 +39,14 @@ function makeQueue(){
 };
 
 function manageQueue(queue){
-    var currentTime = Date.getTime();
+    var currentTime = Math.floor(new Date());
     for(var i=0; i<queue.watchList.length; i++){
-        if(currentTime- queue.watchList.pingTime > 3000){
-            queue.watchList.player.splice(i,1);
+        //console.log("Comparing queue times");
+        //console.log("Current: " + currentTime + " PlayerTime: "+  queue.watchList[i].pingTime);
+        //console.log("Difference: " + (currentTime - queue.watchList[i].pingTime));
+        if(currentTime - queue.watchList[i].pingTime > 3000){
+            console.log("Killing player");
+            queue.watchList.splice(i,1);
             queue.players.splice(i,1);
         }
     }
