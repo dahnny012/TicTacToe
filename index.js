@@ -59,6 +59,7 @@ routes['/search'] = function(req,res){
             return;
         // Get Queue
         var current = queue.getQueue();
+
         // If you havent found a match add yourself.
         if(current.matches[fields.playerId] === undefined){
             current.addPlayer(fields.playerId);
@@ -176,4 +177,3 @@ function makeRelative(link){
     if(link[0] == "/")
         return link.slice(1);
 }
-

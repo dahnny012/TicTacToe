@@ -9,7 +9,8 @@
 		started:false,
 		turn:0,
 		playerTurn:false,
-		over:false
+		over:false,
+		inQueue:false
 	};
 	var app = angular.module("App",[]);
 	
@@ -21,7 +22,9 @@
 		}
 	});
 	
-	app.controller("StartController",['$http','$interval',function($http,$interval){
+	
+	app.controller("StartController",['$http','$interval',
+	function($http,$interval){
 		game.started = false;
 		this.gameStarted = function(){
 			return game.started;
@@ -34,12 +37,14 @@
 		}
 		
 		this.findOpponent = function(){
+			game.inQueue = true;
 			var promise = $interval(function(){
 				$http.post("/search",{playerId:settings.playerId})
 				.success(function(data){
 					console.log(data);
 					if(data.boardId !== undefined){
 						alert("found a player");
+						game.inQueue = false;
 						/// After you recieve a board ID
 						if(game.started == true)
 							return;
@@ -223,5 +228,6 @@
 		return array;
 	};
 })();
+
 
 
