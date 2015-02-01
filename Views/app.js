@@ -193,6 +193,14 @@
 						console.log(game.over);
 						if(data === undefined || data.length < 1)
 							return;
+						if(data.event !== undefined){
+							switch(data.event){
+								case 'leave':
+									alert("Opponent has left");
+									$interval.cancel(promise);
+							}
+							return;
+						}
 						if(data.playerId == settings.playerId)
 							return;
 						if(data.x == lastMove.x && data.y == lastMove.y)

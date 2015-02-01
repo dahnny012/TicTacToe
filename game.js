@@ -16,6 +16,7 @@ function searchGame(boardId){
 function makeRelative(link){
     if(link[0] == "/")
         return link.slice(1);
+    return link;
 };
 
 function board(id){
@@ -43,6 +44,7 @@ function board(id){
     this.kickPlayer = function(index){
         this.players.splice(index,1);
     }
+    this.event = [];
     return this;
 };
 

@@ -41,14 +41,18 @@ routes['/leave'] = function(req,res){
         if(error)
             return;
         queue.removeFromQueue(queue.getQueue(),fields.playerId);
-        console.log(fields.boardId);
         if(fields.boardId !== undefined && fields.boardId !== "/"){
+            console.log("Searching if player in game: " + fields.boardId);
             var board = game.searchGame(fields.boardId);
             // If game was found
             if(board !== undefined){
                 board.removePlayer(fields.playerId);
                 // Set a event in game.
-                board.event = {type:"leave",playerId:fields.playerId};
+                console.log("Setting event");
+                board.event.push({type:"leave",playerId:fields.playerId});
+            }
+            else{
+                console.log("player was not in game");
             }
         }
         res.end("");
@@ -133,8 +137,13 @@ function handlePost(error,fields,board,res){
             console.log("sending update");
             res.writeHead(200,"application/json");
             // Temporary.
-            game.addPlayer(fields.playerId,board);
-            res.end(JSON.stringify(board.lastMove));
+            var event = board.event.pop();
+            if(event !== undefined){
+                handleEvent(event,res);
+            }else{
+                game.addPlayer(fields.playerId,board);
+                res.end(JSON.stringify(board.lastMove));
+            }
             break;
         case "sync":
             console.log("sending sync");
@@ -157,11 +166,20 @@ function handlePost(error,fields,board,res){
     //console.log(board);
 }
 
+function handleEvent(event,res){
+    switch(event.type){
+        case 'leave':
+            var msg = {event:event.type};
+            res.end(JSON.stringify(msg));
+            break;
+    }
+}
+
 
 function handleGame(req,res){
     var reqUrl = url.parse(req.url);
     var board = game.searchGame(reqUrl.path);
-    console.log(board);
+    //console.log(board);
     var form = new formidable.IncomingForm();
     //console.log(req.method);
     if(req.method === 'POST'){
