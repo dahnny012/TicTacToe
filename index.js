@@ -40,7 +40,7 @@ routes['/leave'] = function(req,res){
     form.parse(req,function(error,fields){
         if(error)
             return;
-        queue.removeFromQueue(queue,fields.playerId);
+        queue.removeFromQueue(queue.getQueue(),fields.playerId);
         console.log(fields.boardId);
         if(fields.boardId !== undefined && fields.boardId !== "/"){
             var board = game.searchGame(fields.boardId);
@@ -154,7 +154,7 @@ function handlePost(error,fields,board,res){
             }
             res.end("End");
     }
-    console.log(board);
+    //console.log(board);
 }
 
 

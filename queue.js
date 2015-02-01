@@ -32,6 +32,7 @@ function makeQueue(){
 function findOpponent(queue,playerId){
     if(!queueLock){
         getLock();
+        queue = getQueue();
         var opp = [];
         for(var i=0; i<queue.players.length; i++){
             if(queue.players[i] !== playerId){
@@ -51,6 +52,7 @@ function findOpponent(queue,playerId){
 function manageQueue(queue){
     if(!queueLock){
         getLock();
+        queue = getQueue();
     var currentTime = Math.floor(new Date());
     for(var i=0; i<queue.watchList.length; i++){
         if(currentTime - queue.watchList[i].pingTime > 3000){
@@ -66,6 +68,7 @@ function manageQueue(queue){
 function removeFromQueue(queue,playerId){
     if(!queueLock){
         getLock();
+        queue = getQueue();
         console.log("Removing from queue : " + playerId);
         var index = queue.players.indexOf(playerId);
         if(index != -1){

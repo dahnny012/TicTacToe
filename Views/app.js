@@ -27,10 +27,6 @@
 	function($http,$interval,$scope){
 		game.started = false;
 		
-		window.addEventListener("beforeunload", function(){
-				$http.post("/leave",{playerId:settings.playerId,boardId:settings.boardId});
-		}, false);
-		
 		this.gameStarted = function(){
 			return game.started;
 		};
@@ -61,6 +57,10 @@
 					}
 				});
 			},500);
+			window.addEventListener("beforeunload", function(){
+				$interval.cancel(promise);
+				$http.post("/leave",{playerId:settings.playerId,boardId:settings.boardId});
+		}, false);
 		};
 		this.customGame = function(controller){
 			if(game.started == true)
