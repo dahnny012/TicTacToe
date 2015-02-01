@@ -27,6 +27,14 @@ http.createServer(function(req,res){
 }).listen(80);
 
 var routes = {};
+routes.kill = function(id){
+    if(id[0] !== "/")
+        id = "/" + id;
+    console.log("Killing route " + id);
+    console.log(routes[id]);
+    routes[id] = undefined;
+    console.log(routes[id]);
+}
 routes['/'] = function(req,res){
   fs.readFile('Views/index.html',function(err,data){
       res.writeHead(200,mimeType("index.html"));
@@ -48,6 +56,9 @@ routes['/leave'] = function(req,res){
             if(board !== undefined){
                 board.removePlayer(fields.playerId);
                 // Set a event in game.
+                if(board.players.length < 1){
+                    routes.kill(fields.boardId);
+                }
                 console.log("Setting event");
                 board.event.push({type:"leave",playerId:fields.playerId});
             }
@@ -58,6 +69,7 @@ routes['/leave'] = function(req,res){
         res.end("");
     });
 };
+
 
 routes['/start'] = function(req,res){
     var form = new formidable.IncomingForm();
@@ -134,7 +146,7 @@ function handlePost(error,fields,board,res){
             res.end("Move ok");
             break;
         case "update":
-            console.log("sending update");
+            //console.log("sending update");
             res.writeHead(200,"application/json");
             // Temporary.
             var event = board.event.pop();
