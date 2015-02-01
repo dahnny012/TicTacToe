@@ -3,7 +3,7 @@ var queueLock = false;
 function getQueue(){
     if(queue === undefined)
         queue = new makeQueue();
-    //setInterval(manageQueue,500,queue);
+    setInterval(manageQueue,500,queue);
     return queue;
 };
 
@@ -60,6 +60,7 @@ function manageQueue(queue){
             queue.kick(i);
         }
     }
+        releaseLock();
     }else{
         setTimeout(manageQueue,5,queue);
     }
