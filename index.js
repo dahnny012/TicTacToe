@@ -34,6 +34,27 @@ routes['/'] = function(req,res){
   });  
 };
 
+routes['/leave'] = function(req,res){
+    console.log("Player sent a leave");
+    var form = new formidable.IncomingForm();
+    form.parse(req,function(error,fields){
+        if(error)
+            return;
+        queue.removeFromQueue(queue,fields.playerId);
+        console.log(fields.boardId);
+        if(fields.boardId !== undefined && fields.boardId !== "/"){
+            var board = game.searchGame(fields.boardId);
+            // If game was found
+            if(board !== undefined){
+                board.removePlayer(fields.playerId);
+                // Set a event in game.
+                board.event = {type:"leave",playerId:fields.playerId};
+            }
+        }
+        res.end("");
+    });
+};
+
 routes['/start'] = function(req,res){
     var form = new formidable.IncomingForm();
     var board = game.newGame();
@@ -59,7 +80,6 @@ routes['/search'] = function(req,res){
             return;
         // Get Queue
         var current = queue.getQueue();
-
         // If you havent found a match add yourself.
         if(current.matches[fields.playerId] === undefined){
             current.addPlayer(fields.playerId);
@@ -73,8 +93,9 @@ routes['/search'] = function(req,res){
         }
         console.log("In Queue");
         console.log(current.players);
+        console.log(current.matches);
         // Search for someone.
-        var search = current.findOpponent(fields.playerId);
+        var search = queue.findOpponent(current,fields.playerId);
         if(search.length > 0){
             console.log("FOUND A MATCH");
             var board = game.newGame();

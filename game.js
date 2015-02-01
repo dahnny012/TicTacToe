@@ -16,7 +16,7 @@ function searchGame(boardId){
 function makeRelative(link){
     if(link[0] == "/")
         return link.slice(1);
-}
+};
 
 function board(id){
     this.id=id;
@@ -30,6 +30,19 @@ function board(id){
         this.lastMove = undefined;
         this.endCounter = 0;
     };
+    this.removePlayer = function(playerId){
+        var index = this.getPlayer(playerId);
+        if(index != -1)
+            this.kickPlayer(index);
+    };
+    
+    this.getPlayer = function(playerId){
+      return this.players.indexOf(playerId);  
+    };
+    
+    this.kickPlayer = function(index){
+        this.players.splice(index,1);
+    }
     return this;
 };
 
@@ -46,6 +59,11 @@ function addPlayer(playerId,board){
     }
     return board;
 };
+
+
+
+
+
 
 
 

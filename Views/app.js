@@ -23,9 +23,14 @@
 	});
 	
 	
-	app.controller("StartController",['$http','$interval',
-	function($http,$interval){
+	app.controller("StartController",['$http','$interval',"$scope",
+	function($http,$interval,$scope){
 		game.started = false;
+		
+		window.addEventListener("beforeunload", function(){
+				$http.post("/leave",{playerId:settings.playerId,boardId:settings.boardId});
+		}, false);
+		
 		this.gameStarted = function(){
 			return game.started;
 		};
@@ -55,7 +60,7 @@
 						$interval.cancel(promise);
 					}
 				});
-			},300);
+			},500);
 		};
 		this.customGame = function(controller){
 			if(game.started == true)
