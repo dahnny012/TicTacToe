@@ -57,9 +57,12 @@
 					}
 				});
 			},500);
-			window.addEventListener("beforeunload", function(){
+			window.addEventListener("beforeunload", function(e){
 				$interval.cancel(promise);
 				$http.post("/leave",{playerId:settings.playerId,boardId:settings.boardId});
+				var message = "Removing you from queue/game";
+    			e.returnValue = message;
+				return message;
 		}, false);
 		};
 		this.customGame = function(controller){
