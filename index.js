@@ -4,7 +4,7 @@ var url = require("url");
 var game = require("./game");
 var formidable = require("formidable");
 var queue = require("./queue");
-
+var MAXPLAYERS = 2;
 http.createServer(function(req,res){
     var reqUrl = url.parse(req.url);
     console.log(reqUrl.path);
@@ -26,15 +26,17 @@ http.createServer(function(req,res){
     routes[reqUrl.path](req,res);
 }).listen(80);
 
+
+
+/// Routes
 var routes = {};
 routes.kill = function(id){
     if(id[0] !== "/")
         id = "/" + id;
     console.log("Killing route " + id);
-    console.log(routes[id]);
     routes[id] = undefined;
-    console.log(routes[id]);
-}
+};
+
 routes['/'] = function(req,res){
   fs.readFile('Views/index.html',function(err,data){
       res.writeHead(200,mimeType("index.html"));
@@ -56,10 +58,8 @@ routes['/leave'] = function(req,res){
             if(board !== undefined){
                 board.removePlayer(fields.playerId);
                 // Set a event in game.
-                if(board.players.length < 1){
+                if(board.players.length < 1)
                     routes.kill(fields.boardId);
-                }
-                console.log("Setting event");
                 board.event.push({type:"leave",playerId:fields.playerId});
             }
             else{
@@ -72,21 +72,19 @@ routes['/leave'] = function(req,res){
 
 
 routes['/start'] = function(req,res){
-    var form = new formidable.IncomingForm();
     var board = game.newGame();
+    var form = new formidable.IncomingForm();
     form.parse(req,function(error,fields){
         if(error)
             return;
         game.addPlayer(fields.playerId,board);
     });
-    var boardId = board.id;
-    if(routes['/'+boardId] === undefined){
-        routes['/'+boardId] = handleGame;
-        console.log("added handler");
+    if(routes['/'+board.id] === undefined){
+        routes['/'+board.id] = handleGame;
         console.log("New Board");
         console.log(board);
     }
-    res.end(boardId.toString());
+    res.end(board.id.toString());
 };
 
 routes['/search'] = function(req,res){
@@ -104,7 +102,7 @@ routes['/search'] = function(req,res){
         else{
             console.log("Other player found match");
             var info = {boardId:current.matches[fields.playerId]};
-            current.matches[fields.playerId] === undefined;
+            current.matches[fields.playerId] = undefined;
             res.end(JSON.stringify(info));
         }
         console.log("In Queue");
@@ -120,8 +118,8 @@ routes['/search'] = function(req,res){
                 console.log("Creating a route");
                 console.log(this['/'+board.id]);
             }
-            current.matches[fields.playerId] =board.id;
-            current.matches[search.pop()] = board.id;
+            
+            current.addMatches(board.id,fields.playerId,search.pop());
             info = {playerToStart:fields.playerId,boardId:board.id};
             res.end(JSON.stringify(info));
         }else{
@@ -167,10 +165,10 @@ function handlePost(error,fields,board,res){
             break;
         case "end":
             console.log("Ending game");
-            if(board.players.indexOf(fields.playerId) >= 0)
+            if(board.getPlayer(fields.playerId) >= 0)
                 board.endCounter++;
-            if(board.endCounter >= 2){
-                console.log("Clearing")
+            if(board.endCounter >= MAXPLAYERS){
+                console.log("Clearing");
                 board.clear();
             }
             res.end("End");
@@ -195,7 +193,6 @@ function handleGame(req,res){
     var form = new formidable.IncomingForm();
     //console.log(req.method);
     if(req.method === 'POST'){
-        console.log("request is POST")
         form.parse(req,function(error,fields){
             handlePost(error,fields,board,res);
         });
@@ -209,6 +206,8 @@ function handleGame(req,res){
 };
 
 
+
+//// Utils
 function mimeType(link){
     link = link.split(".");
     link = link.pop();

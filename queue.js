@@ -26,6 +26,10 @@ function makeQueue(){
         this.players.splice(playerIndex,1);
         this.watchList.splice(playerIndex,1);
     };
+    this.addMatches = function(boardId,playerId,search){
+            this.matches[playerId] =boardId;
+            this.matches[search] = boardId;
+    }
 
 };
 
