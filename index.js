@@ -4,41 +4,57 @@ var url = require("url");
 var game = require("./game");
 var formidable = require("formidable");
 var queue = require("./queue");
+<<<<<<< Updated upstream
 var MAXPLAYERS = 2;
+=======
+var route = require("./route");
+var utils = require("./utils");
+
+>>>>>>> Stashed changes
 http.createServer(function(req,res){
     var reqUrl = url.parse(req.url);
     console.log(reqUrl.path);
-    if(routes[reqUrl.path] === undefined){
+    if(route[reqUrl.path] === undefined){
         console.log("Undefined Route");
-        reqUrl.path = makeRelative(reqUrl.path);
+        reqUrl.path = utils.makeRelative(reqUrl.path);
         fs.readFile(reqUrl.path,function(err,data){
             if(err){
                 console.log(err);
                 res.writeHead(404,"text/plain");
                 res.end("Page not found");
             }
-            res.writeHead(200,mimeType(reqUrl.path));
+            res.writeHead(200,utils.mimeType(reqUrl.path));
             res.end(data);
         });
         return;
     }
     console.log("Found a route");
-    routes[reqUrl.path](req,res);
+    route[reqUrl.path](req,res);
 }).listen(80);
 
+<<<<<<< Updated upstream
 
 
 /// Routes
+=======
+/*
+>>>>>>> Stashed changes
 var routes = {};
 routes.kill = function(id){
     if(id[0] !== "/")
         id = "/" + id;
     console.log("Killing route " + id);
     routes[id] = undefined;
+<<<<<<< Updated upstream
 };
 
+=======
+}
+>>>>>>> Stashed changes
 routes['/'] = function(req,res){
   fs.readFile('Views/index.html',function(err,data){
+      if(err)
+        res.end("error");
       res.writeHead(200,mimeType("index.html"));
       res.end(data);
   });  
@@ -226,4 +242,6 @@ function mimeType(link){
 function makeRelative(link){
     if(link[0] == "/")
         return link.slice(1);
+    return link;
 }
+*/
