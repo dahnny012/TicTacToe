@@ -1,4 +1,5 @@
-var http = require("http");
+var app = require("express")()
+var http = require("http").Server(app)
 var fs = require("fs");
 var url = require("url");
 var game = require("./game");
@@ -6,10 +7,28 @@ var formidable = require("formidable");
 var queue = require("./queue");
 var io = require("socket.io")(http);
 
-var MAXPLAYERS = 2;
-http.createServer(function(req,res){
-    routes['/'](req,res)
-}).listen(80);
+http.listen("80",function(){
+    app.get("/",function(req,res){
+        fs.readFile('Views/index.html',function(err,data){
+        res.writeHead(200,mimeType("index.html"));
+        res.end(data);
+    });});
+    app.get("/Views/app.js",function(req,res){
+        fs.readFile('Views/app.js',function(err,data){
+        res.writeHead(200,mimeType("app.js"));
+        res.end(data);
+    });}); 
+    app.get("/Views/app.css",function(req,res){
+        fs.readFile('Views/app.css',function(err,data){
+        res.writeHead(200,mimeType("app.css"));
+        res.end(data);
+    });}); 
+    app.get("/Views/game.html",function(req,res){
+        fs.readFile('Views/game.html',function(err,data){
+        res.writeHead(200,mimeType("game.html"));
+        res.end(data);
+    });});  
+});
 
 
 
