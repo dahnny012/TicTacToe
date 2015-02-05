@@ -6,6 +6,29 @@ var game = require("./game");
 var formidable = require("formidable");
 var queue = require("./queue");
 var io = require("socket.io")(http);
+var INPROGRESS = 1;
+
+
+io.on('connection',function(socket){
+   socket.on('custom',function(msg){
+        var board = game.newGame();
+        game.addPlayer(msg.playerId,board);
+        if(routes['/'+board.id] === undefined){
+            app.get("/"+board.id,handleGame);
+            routes['/'+board.id] = INPROGRESS;
+            console.log(board);
+            socket.emit("join",{boardId:board.id});
+            socket.join(board.id);
+        }
+   });
+   socket.on('move',function(msg){
+       
+   });
+   socket.on('update',function(msg) {
+   })
+});
+
+
 
 http.listen("80",function(){
     app.get("/",function(req,res){
