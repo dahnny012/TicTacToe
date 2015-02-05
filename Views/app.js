@@ -47,6 +47,8 @@
 		if(settings.boardId !== ""){
 				game.started = true;
 				this.msg = "Game is in Progress";
+				socket.emit("update",{boardId:settings.boardId,
+				playerId:settings.playerId});
 		}
 		
 		this.findOpponent = function(){
@@ -89,38 +91,12 @@
 			this.view[x][y].square = player;
 			game.turn++;
 			game.playerTurn = false;
-			this.sendMove(x,y,settings.boardId,player);
+			this.sendMove(x,y,settings.boardId);
 		};
 		
-		
-		 function checkRow(row,x){
-			if(row[x][0].square === row[x][1].square 
-			&& row[x][1].square === row[x][2].square
-			&& row[x][0].square !== "")
-				game.over = true;
-		};
-		function checkCol(row,x){
-			if(row[0][x].square === row[1][x].square
-			&& row[1][x].square === row[2][x].square
-			&& row[0][x].square !== "")
-				game.over = true;
-		};
-		function checkBackslash(row){
-			if(row[0][0].square === row[1][1].square 
-			&& row[1][1].square === row[2][2].square 
-			&& row[0][0].square !== "")
-				game.over = true;
-		};
-		
-		function checkForwardSlash(row){
-			if(row[0][2].square === row[1][1].square 
-			&& row[1][1].square === row[2][0].square 
-			&& row[0][2].square !== "")
-				game.over = true;
-		}
-		
-		this.sendMove = function(x,y,gameID,player){
-			// Socket things
+		this.sendMove = function(x,y,boardId){
+			// Valid move
+			var move = {x:x,y:y,boardId:boardId,playerId:settings.playerId}
 		};
 		
 		this.checkGameOver = function(){
@@ -142,24 +118,30 @@
 			if(draw)
 				game.over = true;
 			if(game.over){
-				game.started == false;
+				//game.started = false;
 				alert("Game is over");
-				// Socket things
+				// transmit a end
+				// reset the board
 			}
 		};
-		var update = function(row,settings,foo){
-			// Socket Things
-			if(game.over){};
-				// Socket things
-		};
-		var foo = this;
-		update(this.view,settings,foo);
+		socket.on('update',function(msg){
+			// Recieve last move
+			// Do some checks
+			// update the board with last move
+			if(game.over){
+			//	game.started = false Unsure about this
+				// transmit a end
+				// reset the board
+			};
+		});
 		}
 	);
 	
 	
 	var board = init();
-
+	
+	
+	//TODO Move to this to a tictactow module
 	function init(){
 		var array = [3];
 		var id = 0;
@@ -173,4 +155,32 @@
 		console.log(array);
 		return array;
 	};
+	function checkRow(row,x){
+	if(row[x][0].square === row[x][1].square 
+	&& row[x][1].square === row[x][2].square
+	&& row[x][0].square !== "")
+		game.over = true;
+	};
+	function checkCol(row,x){
+		if(row[0][x].square === row[1][x].square
+		&& row[1][x].square === row[2][x].square
+		&& row[0][x].square !== "")
+			game.over = true;
+	};
+	function checkBackslash(row){
+		if(row[0][0].square === row[1][1].square 
+		&& row[1][1].square === row[2][2].square 
+		&& row[0][0].square !== "")
+			game.over = true;
+	};
+			
+	function checkForwardSlash(row){
+		if(row[0][2].square === row[1][1].square 
+		&& row[1][1].square === row[2][0].square 
+		&& row[0][2].square !== "")
+			game.over = true;
+	};
 })();
+
+
+
