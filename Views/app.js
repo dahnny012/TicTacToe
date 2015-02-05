@@ -13,8 +13,31 @@
 		inQueue:false
 	};
 	
-	var socket = io();
+	 
 	var app = angular.module("App",[]);
+	app.factory('socket', function ($rootScope) {
+	  var socket = io();
+	  return {
+	    on: function (eventName, callback) {
+	      socket.on(eventName, function () {  
+	        var args = arguments;
+	        $rootScope.$apply(function () {
+	          callback.apply(socket, args);
+	        });
+	      });
+	    },
+	    emit: function (eventName, data, callback) {
+	      socket.emit(eventName, data, function () {
+	        var args = arguments;
+	        $rootScope.$apply(function () {
+	          if (callback) {
+	            callback.apply(socket, args);
+	          }
+	        });
+	      })
+	    }
+	  };
+	});
 	
 	
 	app.directive("game",function(){
@@ -25,16 +48,18 @@
 	});
 	
 	
-	app.controller("StartController",['$http','$interval',"$scope",
-	function($interval,$scope){
+	app.controller("StartController",
+	function(socket){
 		game.started = false;
-		this.msg = "Welcome, how would you like to play?";
-		var controller = this;
+		this.msg = "Welcome";
+		var controller =  this;
+
 		socket.on("join",function(msg){
 			console.log(msg);
 			settings.boardId = msg.boardId;
 			game.started = true;
 			game.playerTurn = true;
+			controller.msg = "danhnguyen.ddns.net/"+msg.boardId;
 		});
 		
 		this.gameStarted = function(){
@@ -59,20 +84,22 @@
 			game.started = true;
 			game.playerTurn = true;
 			socket.emit('custom',{playerId:settings.playerId});
-			var promise = $interval(function(){
-			},100);
 		};
 		
 		this.join=  function(gameID){
 			location.href="/"+gameID;
 		};
-	}]);
+	});
 	
 	app.controller("GameController",
-		function(){
+		function(socket){
+		var controller=  this;
 		this.view = board;
 		var lastMove = {x:-1,y:-1};
-		
+		socket.on("update",function(msg){
+			console.log("update");
+			controller.view[0][0].square = "X";
+		})
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
 			&& !game.over && game.playerTurn){

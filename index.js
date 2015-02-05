@@ -50,6 +50,9 @@ handle.msg = function(type,socket,msg,board){
                 console.log(board);
                 socket.emit("join",{boardId:board.id});
                 socket.join(board.id);
+                setInterval(function(){
+                    socket.emit("update");
+                },500);
         }
         break;
         case 'move':
@@ -94,7 +97,7 @@ handle.event = function (event,socket){
 }
 
 
-http.listen("8080",function(){
+http.listen("80",function(){
     app.get("/",function(req,res){
         fs.readFile('Views/index.html',function(err,data){
         res.writeHead(200,mimeType("index.html"));
@@ -114,7 +117,7 @@ http.listen("8080",function(){
         fs.readFile('Views/game.html',function(err,data){
         res.writeHead(200,mimeType("game.html"));
         res.end(data);
-    });});  
+    });});
 });
 
 
