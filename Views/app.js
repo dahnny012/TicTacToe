@@ -12,6 +12,8 @@
 		over:false,
 		inQueue:false
 	};
+	
+	var socket = io();
 	var app = angular.module("App",[]);
 	
 	
@@ -24,59 +26,38 @@
 	
 	
 	app.controller("StartController",['$http','$interval',"$scope",
-	function($http,$interval,$scope){
+	function($interval){
 		game.started = false;
+		var start = this;
+		
+		socket.on("join",function(msg){
+			console.log(msg);
+			settings.boardId = msg.boardId;
+			game.started = true;
+			game.playerTurn = true;
+			start.msg = "link: http://danhnguyen.ddns.net/"+msg.boardId
+		});
 		
 		this.gameStarted = function(){
 			return game.started;
-		};
+		}
+		
+
 		this.msg = "Welcome, how would you like to play?"
-		console.log("Player ID " + settings.playerId);
 		if(settings.boardId !== ""){
 				game.started = true;
 				this.msg = "Game is in Progress";
 		}
 		
 		this.findOpponent = function(){
-			game.inQueue = true;
-			var promise = $interval(function(){
-				$http.post("/search",{playerId:settings.playerId})
-				.success(function(data){
-					console.log(data);
-					if(data.boardId !== undefined){
-						alert("found a player");
-						game.inQueue = false;
-						/// After you recieve a board ID
-						if(game.started == true)
-							return;
-						game.started = true;
-						if(data.playerToStart !== undefined)
-							game.playerTurn = true;
-						settings.boardId = data.boardId;
-						$interval.cancel(promise);
-					}
-				});
-			},500);
-			window.addEventListener("beforeunload", function(e){
-				$interval.cancel(promise);
-				$http.post("/leave",{playerId:settings.playerId,boardId:settings.boardId});
-				var message = "Removing you from queue/game";
-    			e.returnValue = message;
-				return message;
-		}, false);
+			// Socket things
 		};
 		this.customGame = function(controller){
 			if(game.started == true)
 				return;
 			game.started = true;
 			game.playerTurn = true;
-			var status = $http.post("/start",{ 
-				playerId: settings.playerId})
-			.success(function(data){
-				console.log("Board id "+ data);
-				settings.boardId = data;
-				controller.msg = "Your gamelink " + "danhnguyen.ddns.net/" + settings.boardId;
-			});
+			socket.emit('custom',{playerId:settings.playerId});
 		};
 		
 		this.join=  function(gameID){
@@ -87,8 +68,8 @@
 		};
 	}]);
 	
-	app.controller("GameController",["$http","$interval",
-		function($http,$interval){
+	app.controller("GameController",
+		function(){
 		this.view = board;
 		var lastMove = {x:-1,y:-1};
 		
@@ -139,13 +120,7 @@
 		}
 		
 		this.sendMove = function(x,y,gameID,player){
-			$http.post("/"+gameID,
-			{type:"move",
-			playerId:settings.playerId,
-			x:x,y:y,move:player}).success(
-			function(data){
-				console.log(data);
-			});
+			// Socket things
 		};
 		
 		this.checkGameOver = function(){
@@ -169,63 +144,18 @@
 			if(game.over){
 				game.started == false;
 				alert("Game is over");
-				$http.post("/"+settings.boardId,
-				{type:"end",
-				playerId:settings.playerId}).
-				success(
-				function(data){
-					console.log("Resetting the board");
-					for(var y=0; y<3; y++){
-						for(var x=0; x<3; x++){
-							row[y][x].square = "";
-						}
-					}
-					game.started == true;
-					game.over = false;
-					lastMove = {x:-1,y:-1};
-					
-				});
+				// Socket things
 			}
 		};
-		var update = function(http,row,settings,foo){
-			var promise = $interval(function(){
-				if(game.started && !game.over){
-				http.post("/"+settings.boardId,{type:"update",playerId:settings.playerId})
-				.success(
-					function(data){
-						console.log(game.over);
-						if(data === undefined || data.length < 1)
-							return;
-						if(data.event !== undefined){
-							switch(data.event){
-								case 'leave':
-									alert("Opponent has left");
-									$interval.cancel(promise);
-							}
-							return;
-						}
-						if(data.playerId == settings.playerId)
-							return;
-						if(data.x == lastMove.x && data.y == lastMove.y)
-							return;
-						if(data.x !== undefined && data.y !== undefined){
-							console.log("Data added");
-							row[data.x][data.y].square = data.move;
-							lastMove = data;
-							game.playerTurn = true;
-							game.turn++;
-							foo.checkGameOver();
-						}
-					});
-				}
-			},300);
-			if(game.over)
-				$interval.cancel(promise);
+		var update = function(row,settings,foo){
+			// Socket Things
+			if(game.over){};
+				// Socket things
 		};
 		var foo = this;
-		update($http,this.view,settings,foo);
-		
-	}]);
+		update(this.view,settings,foo);
+		}
+	);
 	
 	
 	var board = init();
@@ -244,6 +174,3 @@
 		return array;
 	};
 })();
-
-
-
