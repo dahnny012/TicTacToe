@@ -17,7 +17,7 @@ io.on('connection',function(socket){
         handle.msg('custom',socket,msg,board);
    });
    socket.on('move',function(msg){
-       
+       handle.msg('move',socket,msg);
    });
    socket.on('update',function(msg) {
        handle.msg('update',socket,msg);
@@ -94,7 +94,7 @@ handle.event = function (event,socket){
 }
 
 
-http.listen("80",function(){
+http.listen("8080",function(){
     app.get("/",function(req,res){
         fs.readFile('Views/index.html',function(err,data){
         res.writeHead(200,mimeType("index.html"));

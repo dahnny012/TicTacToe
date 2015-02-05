@@ -26,16 +26,15 @@
 	
 	
 	app.controller("StartController",['$http','$interval',"$scope",
-	function($interval){
+	function($interval,$scope){
 		game.started = false;
-		var start = this;
-		
+		this.msg = "Welcome, how would you like to play?";
+		var controller = this;
 		socket.on("join",function(msg){
 			console.log(msg);
 			settings.boardId = msg.boardId;
 			game.started = true;
 			game.playerTurn = true;
-			start.msg = "link: http://danhnguyen.ddns.net/"+msg.boardId
 		});
 		
 		this.gameStarted = function(){
@@ -43,7 +42,7 @@
 		}
 		
 
-		this.msg = "Welcome, how would you like to play?"
+
 		if(settings.boardId !== ""){
 				game.started = true;
 				this.msg = "Game is in Progress";
@@ -60,13 +59,12 @@
 			game.started = true;
 			game.playerTurn = true;
 			socket.emit('custom',{playerId:settings.playerId});
+			var promise = $interval(function(){
+			},100);
 		};
 		
 		this.join=  function(gameID){
 			location.href="/"+gameID;
-		};
-		function start(){
-			
 		};
 	}]);
 	
