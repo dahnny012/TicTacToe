@@ -20,10 +20,14 @@ io.on('connection',function(socket){
        
    });
    socket.on('update',function(msg) {
-       handle.msg('update',socket,msg,board);
+       handle.msg('update',socket,msg);
    });
+   socket.on('sync',function(msg){
+       handle.msg('sync',socket,msg);
+   })
+   
    socket.on('end',function(msg){
-       handle.msg('end',socket,msg,board);
+       handle.msg('end',socket,msg);
    });
 });
 
@@ -35,6 +39,8 @@ handle.game = function(req,res){
     });
 };
 handle.msg = function(type,socket,msg,board){
+    if(board == undefined)
+        board = game.searchGame(msg.boardId);
     switch(type){
         case 'custom':
             game.addPlayer(msg.playerId,board);
@@ -46,6 +52,11 @@ handle.msg = function(type,socket,msg,board){
                 socket.join(board.id);
         }
         break;
+        case 'move':
+            var move ={playerId:msg.playerId,
+            x:msg.x,y:msg.y,move:msg.move};
+            board.history.push(move);
+            board.lastMove = move;
         case 'update':
             var event = board.event.pop();
             if(event !== undefined){
@@ -55,9 +66,20 @@ handle.msg = function(type,socket,msg,board){
                 var update = JSON.stringify(board.lastMove);
                 socket.to(board.id).emit("update",update);
             }
-        case 'end':
-            return 1;
         break;
+        case 'sync':
+            console.log("sending sync");
+            console.log("player "+ msg.playerId);
+            game.addPlayer(msg.playerId,board);
+            socket.emit("sync",JSON.stringify(board.history));
+            break;
+        case 'end':
+            console.log("Ending game");
+            if(board.getPlayer(msg.playerId) >= 0)
+                board.endCounter++;
+            if(board.endCounter >= 2){
+                board.clear();
+            }
     }
     return 1;
 }
@@ -104,13 +126,6 @@ routes.kill = function(id){
         id = "/" + id;
     console.log("Killing route " + id);
     routes[id] = undefined;
-};
-
-routes['/'] = function(req,res){
-  fs.readFile('Views/index.html',function(err,data){
-      res.writeHead(200,mimeType("index.html"));
-      res.end(data);
-  });  
 };
 
 routes['/leave'] = function(req,res){
@@ -181,54 +196,6 @@ routes['/search'] = function(req,res){
     });
 
 };
-
-
-
-function handlePost(error,fields,board,res){
-    if(error)
-        return;
-    switch(fields.type){
-        case "move":
-            console.log("Making a move on board");
-            var move ={playerId:fields.playerId,
-            x:fields.x,y:fields.y,move:fields.move};
-            board.history.push(move);
-            board.lastMove = move;
-            res.end("Move ok");
-            break;
-        case "update":
-            //console.log("sending update");
-            res.writeHead(200,"application/json");
-            // Temporary.
-            var event = board.event.pop();
-            if(event !== undefined){
-                handleEvent(event,res);
-            }else{
-                game.addPlayer(fields.playerId,board);
-                res.end(JSON.stringify(board.lastMove));
-            }
-            break;
-        case "sync":
-            console.log("sending sync");
-            console.log("player "+ fields.playerId);
-            game.addPlayer(fields.playerId,board);
-            res.writeHead(200,"application/json");
-            console.log(JSON.stringify(board.history));
-            res.end(JSON.stringify(board.history));
-            break;
-        case "end":
-            console.log("Ending game");
-            if(board.getPlayer(fields.playerId) >= 0)
-                board.endCounter++;
-            if(board.endCounter >= MAXPLAYERS){
-                console.log("Clearing");
-                board.clear();
-            }
-            res.end("End");
-    }
-    //console.log(board);
-}
-
 
 
 
