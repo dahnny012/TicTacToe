@@ -50,9 +50,6 @@ handle.msg = function(type,socket,msg,board){
                 console.log(board);
                 socket.emit("join",{boardId:board.id});
                 socket.join(board.id);
-                setInterval(function(){
-                    socket.emit("update");
-                },500);
         }
         break;
         case 'move':
