@@ -9,25 +9,67 @@ var io = require("socket.io")(http);
 var INPROGRESS = 1;
 
 
+
+// Redirects io events to handlers
 io.on('connection',function(socket){
    socket.on('custom',function(msg){
         var board = game.newGame();
-        game.addPlayer(msg.playerId,board);
-        if(routes['/'+board.id] === undefined){
-            app.get("/"+board.id,handleGame);
-            routes['/'+board.id] = INPROGRESS;
-            console.log(board);
-            socket.emit("join",{boardId:board.id});
-            socket.join(board.id);
-        }
+        handle.msg('custom',socket,msg,board);
    });
    socket.on('move',function(msg){
        
    });
    socket.on('update',function(msg) {
-   })
+       handle.msg('update',socket,msg,board);
+   });
+   socket.on('end',function(msg){
+       handle.msg('end',socket,msg,board);
+   });
 });
 
+var handle = {};
+handle.game = function(req,res){
+    fs.readFile('Views/index.html',function(err,data){
+        res.writeHead(200,mimeType("index.html"));
+        res.end(data);
+    });
+};
+handle.msg = function(type,socket,msg,board){
+    switch(type){
+        case 'custom':
+            game.addPlayer(msg.playerId,board);
+            if(routes['/'+board.id] === undefined){
+                app.get("/"+board.id,handle.game);
+                routes['/'+board.id] = INPROGRESS;
+                console.log(board);
+                socket.emit("join",{boardId:board.id});
+                socket.join(board.id);
+        }
+        break;
+        case 'update':
+            var event = board.event.pop();
+            if(event !== undefined){
+                handle.event(event,socket);
+            }else{
+                game.addPlayer(msg.playerId,board);
+                var update = JSON.stringify(board.lastMove);
+                socket.to(board.id).emit("update",update);
+            }
+        case 'end':
+            return 1;
+        break;
+    }
+    return 1;
+}
+
+handle.event = function (event,socket){
+    switch(event.type){
+        case 'leave':
+            var msg = {event:event.type};
+            socket.emit('leave',JSON.stringify(msg));
+            break;
+    }
+}
 
 
 http.listen("80",function(){
@@ -97,22 +139,6 @@ routes['/leave'] = function(req,res){
     });
 };
 
-
-routes['/start'] = function(req,res){
-    var board = game.newGame();
-    var form = new formidable.IncomingForm();
-    form.parse(req,function(error,fields){
-        if(error)
-            return;
-        game.addPlayer(fields.playerId,board);
-    });
-    if(routes['/'+board.id] === undefined){
-        routes['/'+board.id] = handleGame;
-        console.log("New Board");
-        console.log(board);
-    }
-    res.end(board.id.toString());
-};
 
 routes['/search'] = function(req,res){
     var form = new formidable.IncomingForm();
@@ -203,34 +229,7 @@ function handlePost(error,fields,board,res){
     //console.log(board);
 }
 
-function handleEvent(event,res){
-    switch(event.type){
-        case 'leave':
-            var msg = {event:event.type};
-            res.end(JSON.stringify(msg));
-            break;
-    }
-}
 
-
-function handleGame(req,res){
-    var reqUrl = url.parse(req.url);
-    var board = game.searchGame(reqUrl.path);
-    //console.log(board);
-    var form = new formidable.IncomingForm();
-    //console.log(req.method);
-    if(req.method === 'POST'){
-        form.parse(req,function(error,fields){
-            handlePost(error,fields,board,res);
-        });
-    }
-    else{
-        fs.readFile('Views/index.html',function(err,data){
-            res.writeHead(200,mimeType("index.html"));
-            res.end(data);
-        });
-    }
-};
 
 
 
