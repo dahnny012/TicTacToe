@@ -94,9 +94,6 @@
 		var controller=  this;
 		this.view = board;
 		var lastMove = {x:-1,y:-1};
-		socket.on("update",function(msg){
-			
-		})
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
 			&& !game.over && game.playerTurn){
@@ -143,7 +140,8 @@
 				game.over = true;
 			if(game.over){
 				alert("Game is over");
-				socket.emit("end",{playerId:settings.playerId},function(){
+				socket.emit("end",{playerId:settings.playerId,boardId:settings.boardId});
+				socket.on("reset",function(msg){
 					console.log("Resetting the board");
 					for(var y=0; y<3; y++){
 						for(var x=0; x<3; x++){
@@ -157,9 +155,14 @@
 			}
 		};
 		socket.on('update',function(msg){
+			console.log("Received a update");
 			console.log(msg);
+			if(msg == undefined)
+				return;
+			if(msg.x == undefined || msg.y == undefined)
+				return;
 			if(lastMove.x == msg.x && lastMove.y == msg.y)
-				return
+				return;
 			controller.view[msg.x][msg.y].square = msg.move;
 			lastMove = msg;
 			game.playerTurn = true;

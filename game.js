@@ -48,13 +48,15 @@ function board(id){
     return this;
 };
 
-function addPlayer(playerId,board){
+function addPlayer(playerId,board,socket){
     if(board.players.indexOf(playerId) !== -1)
         return board;
     for(var i=0; i<2; i++){
         if(board.players[i] === undefined){
             console.log("Adding player");
             board.players[i] = playerId;
+            if(socket !== undefined)
+                socket.join(board.id);
             console.log(board);
             break;
         }

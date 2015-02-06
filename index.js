@@ -62,8 +62,8 @@ handle.msg = function(type,socket,msg,board){
             if(event !== undefined){
                 handle.event(event,socket);
             }else{
-                game.addPlayer(msg.playerId,board);
-                var update = JSON.stringify(board.lastMove);
+                game.addPlayer(msg.playerId,board,socket);
+                var update= board.lastMove;
                 socket.to(board.id).emit("update",update);
             }
         break;
@@ -71,7 +71,7 @@ handle.msg = function(type,socket,msg,board){
             console.log("sending sync");
             console.log("player "+ msg.playerId);
             game.addPlayer(msg.playerId,board);
-            socket.emit("sync",JSON.stringify(board.history));
+            socket.emit("sync",board.history);
             break;
         case 'end':
             console.log("Ending game");
@@ -79,7 +79,9 @@ handle.msg = function(type,socket,msg,board){
                 board.endCounter++;
             if(board.endCounter >= 2){
                 board.clear();
+                console.log(board);
             }
+            socket.emit("reset");
     }
     return 1;
 }
@@ -88,7 +90,7 @@ handle.event = function (event,socket){
     switch(event.type){
         case 'leave':
             var msg = {event:event.type};
-            socket.emit('leave',JSON.stringify(msg));
+            socket.emit('leave',msg);
             break;
     }
 }
