@@ -31,7 +31,10 @@ io.on('connection',function(socket){
    });
    
    socket.on('queue',function(msg){
-      handle.queue('queue',socket,msg); 
+       handle.queue('queue',socket,msg); 
+   });
+   socket.on('disconnect',function(msg){
+       handle.leave('disconnect',msg);
    });
 });
 
@@ -101,7 +104,9 @@ handle.queue = function(type,socket,msg){
             console.log("Other player found match");
             var info = {boardId:current.matches[msg.playerId]};
             current.matches[msg.playerId] = undefined;
-            // Socket emit info
+            socket.join(info.boardId);
+            socket.emit("found match",info);
+            return;
         }
         console.log("In Queue");
         console.log(current.players);
@@ -115,10 +120,10 @@ handle.queue = function(type,socket,msg){
                 console.log("Creating a route");
                 console.log(this['/'+board.id]);
             }
-            
             current.addMatches(board.id,msg.playerId,search.pop());
             info = {playerToStart:msg.playerId,boardId:board.id};
-            socket.to("SOME ROOM").emit(info);
+            socket.join(info.boardId);
+            socket.emit("found match",info);
         }
 }
 
@@ -192,50 +197,6 @@ routes['/leave'] = function(req,res){
         res.end("");
     });
 };
-
-
-routes['/search'] = function(req,res){
-    var form = new formidable.IncomingForm();
-    form.parse(req,function(error,fields){
-        if(error)
-            return;
-        // Get Queue
-        var current = queue.getQueue();
-        // If you havent found a match add yourself.
-        if(current.matches[fields.playerId] === undefined){
-            current.addPlayer(fields.playerId);
-        }
-        // If a match was found write i found one and give u the info.
-        else{
-            console.log("Other player found match");
-            var info = {boardId:current.matches[fields.playerId]};
-            current.matches[fields.playerId] = undefined;
-            res.end(JSON.stringify(info));
-        }
-        console.log("In Queue");
-        console.log(current.players);
-        console.log(current.matches);
-        // Search for someone.
-        var search = queue.findOpponent(current,fields.playerId);
-        if(search.length > 0){
-            console.log("FOUND A MATCH");
-            var board = game.newGame();
-            if(routes['/'+board.id] === undefined){
-                routes['/'+board.id] = handleGame;
-                console.log("Creating a route");
-                console.log(this['/'+board.id]);
-            }
-            
-            current.addMatches(board.id,fields.playerId,search.pop());
-            info = {playerToStart:fields.playerId,boardId:board.id};
-            res.end(JSON.stringify(info));
-        }else{
-            res.end("Finding");
-        }
-    });
-
-};
-
 
 
 

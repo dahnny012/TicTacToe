@@ -49,7 +49,7 @@
 	
 	
 	app.controller("StartController",
-	function(socket){
+	function(socket,$interval){
 		game.started = false;
 		this.msg = "Welcome";
 		var controller =  this;
@@ -74,7 +74,22 @@
 		}
 		
 		this.findOpponent = function(){
-			// Socket things
+			var promise = $interval(function(){
+				socket.emit("queue",{playerId:settings.playerId});
+			},100);
+			socket.on("found match",function(msg){
+			if(msg.boardId !== undefined){
+						$interval.cancel(promise);
+						alert("found a player");
+						game.inQueue = false;
+						/// After you recieve a board ID
+						if(game.started == true)
+							return;
+						game.started = true;
+						if(msg.playerToStart !== undefined)
+							game.playerTurn = true;
+						settings.boardId = msg.boardId;
+			}});
 		};
 		this.customGame = function(controller){
 			if(game.started == true)

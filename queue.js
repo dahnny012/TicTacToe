@@ -3,7 +3,6 @@ var queueLock = false;
 function getQueue(){
     if(queue === undefined)
         queue = new makeQueue();
-    setInterval(manageQueue,500,queue);
     return queue;
 };
 
