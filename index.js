@@ -29,6 +29,10 @@ io.on('connection',function(socket){
    socket.on('end',function(msg){
        handle.msg('end',socket,msg);
    });
+   
+   socket.on('queue',function(msg){
+      handle.queue('queue',socket,msg); 
+   });
 });
 
 var handle = {};
@@ -82,9 +86,42 @@ handle.msg = function(type,socket,msg,board){
                 console.log(board);
             }
             socket.emit("reset");
+            break;
     }
     return 1;
 }
+
+handle.queue = function(type,socket,msg){
+     var current = queue.getQueue();
+     // If you havent found a match add yourself.
+        if(current.matches[msg.playerId] === undefined){
+            current.addPlayer(msg.playerId);
+        }
+        else{
+            console.log("Other player found match");
+            var info = {boardId:current.matches[msg.playerId]};
+            current.matches[msg.playerId] = undefined;
+            // Socket emit info
+        }
+        console.log("In Queue");
+        console.log(current.players);
+        console.log(current.matches);
+        var search = queue.findOpponent(current,msg.playerId);
+        if(search.length > 0){
+            console.log("FOUND A MATCH");
+            var board = game.newGame();
+            if(routes['/'+board.id] === undefined){
+                app.get("/"+board.id ,handle.game);
+                console.log("Creating a route");
+                console.log(this['/'+board.id]);
+            }
+            
+            current.addMatches(board.id,msg.playerId,search.pop());
+            info = {playerToStart:msg.playerId,boardId:board.id};
+            socket.to("SOME ROOM").emit(info);
+        }
+}
+
 
 handle.event = function (event,socket){
     switch(event.type){
