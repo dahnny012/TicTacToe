@@ -42,6 +42,7 @@
 	
 	app.factory('tictactoe',function(){
 		return{
+			lastMove: {x:-1,y:-1},
 			init:function(board,socket){
 				// Set board
 				var array = [3];
@@ -57,20 +58,90 @@
 				board = array;
 				
 			},
-			play:function(move){
-				// Check validity
+			play:function(board,move,socket){
+				if(board[move.x][move.y].square === ""
+				&& !game.over && game.playerTurn){
+					var player =  (game.turn % 2 == 0? "X" : "O");
+					this.playOne(board,player,move);
+					this.checkGameOver(board,socket);
+				}
 			},
-			playOnce:function(){},
+			playOne:function(board,player,move,socket){
+				board[move.x][move.y].square = player;
+				game.turn++;
+				game.playerTurn = false;
+				this.sendMove(move,settings.boardId,player,socket);
+			},
+			sendMove:function(move,boardId,player,socket){
+				move = {x:move.x,y:move.y,boardId:boardId,playerId:settings.playerId,move:player};
+				this.lastMove = {x:move.x,y:move.y};
+				socket.emit("move",move);
+			},
+			checkGameOver:function(board,socket){
+				var row = board;
+				var draw = true;
+				var tictactoe = this;
+				for(var x=0; x<3; x++){
+						this.checkRow(row,x);
+						this.checkCol(row,x);
+						// Check Draws
+						for(var y=0; y<3; y++){
+							if(row[x][y].square === "")
+								draw = false;
+						}
+				}
+						// Diags
+				this.checkBackslash(row);
+				this.checkForwardSlash(row);
+				if(draw)
+					game.over = true;
+				if(game.over){
+					alert("Game is over");
+					socket.emit("end",{playerId:settings.playerId,boardId:settings.boardId});
+					socket.on("reset",function(msg){
+						console.log("Resetting the board");
+						for(var y=0; y<3; y++){
+							for(var x=0; x<3; x++){
+								row[y][x].square = "";
+							}
+						}
+						game.over = false;
+						tictactoe.lastMove = {x:-1,y:-1};
+					});
+				}
+			},
 			sendMove:function(){},
-			isOver:function(){},
-			sendMove:function(){}
+			checkRow:function(row,x){
+			if(row[x][0].square === row[x][1].square 
+			&& row[x][1].square === row[x][2].square
+			&& row[x][0].square !== "")
+				game.over = true;
+			},
+			checkCol:function(row,x){
+				if(row[0][x].square === row[1][x].square
+				&& row[1][x].square === row[2][x].square
+				&& row[0][x].square !== "")
+					game.over = true;
+			},
+			checkBackslash:function(row){
+				if(row[0][0].square === row[1][1].square 
+				&& row[1][1].square === row[2][2].square 
+				&& row[0][0].square !== "")
+					game.over = true;
+			},
+			checkForwardSlash:function(row){
+				if(row[0][2].square === row[1][1].square 
+				&& row[1][1].square === row[2][0].square 
+				&& row[0][2].square !== "")
+					game.over = true;
+			}
 		};
 	});
 	app.factory('rps',function(){
 		return{
 			init:function(){},
 			play:function(){},
-			playOnce:function(){},
+			playOne:function(){},
 			isOver:function(){},
 			sendMove:function(){}
 		};
@@ -160,7 +231,6 @@
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
 			&& !game.over && game.playerTurn){
-				console.log(game.turn);
 				var player =  (game.turn % 2 == 0? "X" : "O");
 				this.playOne(player,x,y);
 				this.checkGameOver();
