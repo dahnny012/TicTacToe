@@ -122,6 +122,7 @@ handle.queue = function(type,socket,msg){
                 console.log("Creating a route");
             }
             current.addMatches(board.id,msg.playerId,search.pop());
+            current.matches[msg.playerId] = undefined;
             info = {playerToStart:msg.playerId,boardId:board.id};
             socket.join(info.boardId);
             socket.emit("found match",info);
@@ -139,6 +140,7 @@ handle.disconnect = function(event,socket,msg){
                 board.removePlayer(msg.playerId);
                 handle.kill(msg.boardId);
                 socket.to(board.id).emit("leave");
+                socket.leave(board.id);
             }
             else{
                 console.log("player was not in game");

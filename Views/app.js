@@ -39,11 +39,15 @@
 	  };
 	});
 	
+	
+	app.factory('tictactoe',function($rootScope){});
+	
 	app.controller("StartController",
 	function(socket,$interval){
 		game.started = false;
 		this.msg = "Welcome to TicTacToe online";
 		var controller =  this;
+		var lockout = false;
 
 		socket.on("join",function(msg){
 			console.log(msg);
@@ -65,18 +69,19 @@
 		}
 		
 		this.findOpponent = function(){
+			if(game.started)
+				return;
+			setLeave();
 			this.msg ="Currently in queue"
 			var promise = $interval(function(){
-				socket.emit("queue",{playerId:settings.playerId});
+				if(!lockout)
+					socket.emit("queue",{playerId:settings.playerId});
 			},100);
 			socket.on("found match",function(msg){
 			if(msg.boardId !== undefined){
 						$interval.cancel(promise);
 						alert("found a player");
 						game.inQueue = false;
-						/// After you recieve a board ID
-						if(game.started == true)
-							return;
 						game.started = true;
 						if(msg.playerToStart !== undefined)
 							game.playerTurn = true;
@@ -90,25 +95,34 @@
 			game.started = true;
 			game.playerTurn = true;
 			socket.emit('custom',{playerId:settings.playerId});
+			setLeave();
 		};
 		
 		this.join =  function(gameID){
 			location.href="/"+gameID;
 		};
 		
+		function setLeave(){
 		window.addEventListener("beforeunload", function(e){
+				lockout = true;
 				socket.emit("leave",{playerId:settings.playerId,boardId:settings.boardId});
 				var message = "Removing you from queue/game";
     			e.returnValue = message;
 				return message;
 		}, false);
+		}
 	});
 	
 	app.controller("GameController",
 		function(socket){
+		var lastMove = {x:-1,y:-1};
 		var controller=  this;
 		this.view = board;
-		var lastMove = {x:-1,y:-1};
+		this.turn = function(){
+			if(game.playerTurn)
+				return "your turn.";
+			return "your opponent's turn.";
+		}
 		this.play = function(x,y){
 			if(this.view[x][y].square === ""
 			&& !game.over && game.playerTurn){
@@ -129,7 +143,6 @@
 		};
 		
 		this.sendMove = function(x,y,boardId,player){
-			// Valid move
 			var move = {x:x,y:y,boardId:boardId,playerId:settings.playerId,move:player};
 			lastMove = {x:x,y:y};
 			socket.emit("move",move);
@@ -139,7 +152,6 @@
 			var row = this.view;
 			var draw = true;
 			for(var x=0; x<3; x++){
-					// Rows 
 					checkRow(row,x);
 					checkCol(row,x);
 					// Check Draws
@@ -163,7 +175,6 @@
 							row[y][x].square = "";
 						}
 					}
-					game.started == true;
 					game.over = false;
 					lastMove = {x:-1,y:-1};
 				});
@@ -186,7 +197,14 @@
 		});
 		socket.on('leave',function(msg){
 			alert("A player has left the game");
+			console.log("Resetting the board");
+			for(var y=0; y<3; y++){
+						for(var x=0; x<3; x++){
+							controller.view[y][x].square = "";
+						}
+			}
 			game.playerTurn = false;
+			game.started = false;
 		});
 		}
 		
