@@ -40,7 +40,41 @@
 	});
 	
 	
-	app.factory('tictactoe',function($rootScope){});
+	app.factory('tictactoe',function(){
+		return{
+			init:function(board,socket){
+				// Set board
+				var array = [3];
+				var id = 0;
+				for(var j=0; j<3; j++){
+					array[j] = [3];
+					for(var i =0; i<3; i++){
+						array[j][i] = {square:"",x:j,y:i};
+						id++;
+					}
+				}
+				console.log(array);
+				board = array;
+				
+			},
+			play:function(move){
+				// Check validity
+			},
+			playOnce:function(){},
+			sendMove:function(){},
+			isOver:function(){},
+			sendMove:function(){}
+		};
+	});
+	app.factory('rps',function(){
+		return{
+			init:function(){},
+			play:function(){},
+			playOnce:function(){},
+			isOver:function(){},
+			sendMove:function(){}
+		};
+	});
 	
 	app.controller("StartController",
 	function(socket,$interval){
