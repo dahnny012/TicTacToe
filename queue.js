@@ -77,7 +77,9 @@ function removeFromQueue(queue,playerId){
         console.log("Removing from queue : " + playerId);
         var index = queue.players.indexOf(playerId);
         if(index != -1){
+            console.log("player found")
             queue.kick(index);
+            queue.matches[playerId] = undefined;
         }
         releaseLock();
     }else{

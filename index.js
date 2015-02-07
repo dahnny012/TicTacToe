@@ -96,6 +96,7 @@ handle.msg = function(type,socket,msg,board){
 
 
 handle.queue = function(type,socket,msg){
+    console.log("Player queuing " + msg.playerId);
      var current = queue.getQueue();
      // If you havent found a match add yourself.
         if(current.matches[msg.playerId] === undefined){
@@ -177,11 +178,8 @@ http.listen("80",function(){
         res.writeHead(200,mimeType("app.css"));
         res.end(data);
     });}); 
-    app.get("/Views/game.html",function(req,res){
-        fs.readFile('Views/game.html',function(err,data){
-        res.writeHead(200,mimeType("game.html"));
-        res.end(data);
-    });});
+
+   
 });
 
 

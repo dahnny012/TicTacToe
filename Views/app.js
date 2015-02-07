@@ -39,19 +39,10 @@
 	  };
 	});
 	
-	
-	app.directive("game",function(){
-		return {
-			restrict:'E',
-			templateUrl:"Views/game.html"
-		}
-	});
-	
-	
 	app.controller("StartController",
 	function(socket,$interval){
 		game.started = false;
-		this.msg = "Welcome";
+		this.msg = "Welcome to TicTacToe online";
 		var controller =  this;
 
 		socket.on("join",function(msg){
@@ -74,7 +65,7 @@
 		}
 		
 		this.findOpponent = function(){
-			this.loadLeaveHandler();
+			this.msg ="Currently in queue"
 			var promise = $interval(function(){
 				socket.emit("queue",{playerId:settings.playerId});
 			},100);
@@ -90,6 +81,7 @@
 						if(msg.playerToStart !== undefined)
 							game.playerTurn = true;
 						settings.boardId = msg.boardId;
+						controller.msg = "Game has started"
 			}});
 		};
 		this.customGame = function(controller){
@@ -98,22 +90,18 @@
 			game.started = true;
 			game.playerTurn = true;
 			socket.emit('custom',{playerId:settings.playerId});
-			this.loadLeaveHandler();
 		};
 		
 		this.join =  function(gameID){
 			location.href="/"+gameID;
-			this.loadLeaveHandler();
 		};
 		
-		this.loadLeaveHandler= function(){
-			window.addEventListener("beforeunload", function(e){
+		window.addEventListener("beforeunload", function(e){
 				socket.emit("leave",{playerId:settings.playerId,boardId:settings.boardId});
 				var message = "Removing you from queue/game";
     			e.returnValue = message;
 				return message;
 		}, false);
-		}
 	});
 	
 	app.controller("GameController",
