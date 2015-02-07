@@ -33,8 +33,8 @@ io.on('connection',function(socket){
    socket.on('queue',function(msg){
        handle.queue('queue',socket,msg); 
    });
-   socket.on('disconnect',function(msg){
-       handle.leave('disconnect',msg);
+   socket.on('leave',function(msg){
+       handle.disconnect('leave',socket,msg);
    });
 });
 
@@ -84,7 +84,7 @@ handle.msg = function(type,socket,msg,board){
             console.log("Ending game");
             if(board.getPlayer(msg.playerId) >= 0)
                 board.endCounter++;
-            if(board.endCounter >= 2){
+            if(board.isEmpty()){
                 board.clear();
                 console.log(board);
             }
@@ -93,6 +93,7 @@ handle.msg = function(type,socket,msg,board){
     }
     return 1;
 }
+
 
 handle.queue = function(type,socket,msg){
      var current = queue.getQueue();
@@ -118,12 +119,29 @@ handle.queue = function(type,socket,msg){
             if(routes['/'+board.id] === undefined){
                 app.get("/"+board.id ,handle.game);
                 console.log("Creating a route");
-                console.log(this['/'+board.id]);
             }
             current.addMatches(board.id,msg.playerId,search.pop());
             info = {playerToStart:msg.playerId,boardId:board.id};
             socket.join(info.boardId);
             socket.emit("found match",info);
+        }
+}
+
+
+handle.disconnect = function(event,socket,msg){
+    console.log("Player sent a leave");
+        queue.removeFromQueue(queue.getQueue(),msg.playerId);
+        if(msg.boardId !== undefined && msg.boardId !== "/"){
+            console.log("Searching if player in game: " + msg.boardId);
+            var board = game.searchGame(msg.boardId);
+            if(board !== undefined){
+                board.removePlayer(msg.playerId);
+                handle.kill(msg.boardId);
+                socket.to(board.id).emit("leave");
+            }
+            else{
+                console.log("player was not in game");
+            }
         }
 }
 
@@ -135,6 +153,11 @@ handle.event = function (event,socket){
             socket.emit('leave',msg);
             break;
     }
+}
+
+handle.kill = function(board){
+    routes["/"+board.id]=  undefined;
+    board = undefined;
 }
 
 
@@ -165,40 +188,6 @@ http.listen("80",function(){
 
 /// Routes
 var routes = {};
-routes.kill = function(id){
-    if(id[0] !== "/")
-        id = "/" + id;
-    console.log("Killing route " + id);
-    routes[id] = undefined;
-};
-
-routes['/leave'] = function(req,res){
-    console.log("Player sent a leave");
-    var form = new formidable.IncomingForm();
-    form.parse(req,function(error,fields){
-        if(error)
-            return;
-        queue.removeFromQueue(queue.getQueue(),fields.playerId);
-        if(fields.boardId !== undefined && fields.boardId !== "/"){
-            console.log("Searching if player in game: " + fields.boardId);
-            var board = game.searchGame(fields.boardId);
-            // If game was found
-            if(board !== undefined){
-                board.removePlayer(fields.playerId);
-                // Set a event in game.
-                if(board.players.length < 1)
-                    routes.kill(fields.boardId);
-                board.event.push({type:"leave",playerId:fields.playerId});
-            }
-            else{
-                console.log("player was not in game");
-            }
-        }
-        res.end("");
-    });
-};
-
-
 
 //// Utils
 function mimeType(link){

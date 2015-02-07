@@ -4,8 +4,9 @@ function randomNum(){
 }
 function newGame(){
     var id = randomNum();
-    if(boards[id] === undefined)
-     boards[id] = new board(id);
+    while(boards[id] !== undefined)
+        id = randomNum();
+    boards[id] = new board(id);
     return boards[id];
 };
 
@@ -45,6 +46,10 @@ function board(id){
         this.players.splice(index,1);
     }
     this.event = [];
+    this.isEmpty = function(){
+        return this.players[0] == undefined 
+        && this.players[1] == undefined
+    }
     return this;
 };
 

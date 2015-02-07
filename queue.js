@@ -42,6 +42,7 @@ function findOpponent(queue,playerId){
                 opp = queue.players.splice(i,1);
                 var playerIndex = queue.players.indexOf(playerId);
                 queue.kick(playerIndex);
+                queue.kick(opp[0]);
                 break;
             }
         }

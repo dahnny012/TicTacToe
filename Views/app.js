@@ -74,6 +74,7 @@
 		}
 		
 		this.findOpponent = function(){
+			this.loadLeaveHandler();
 			var promise = $interval(function(){
 				socket.emit("queue",{playerId:settings.playerId});
 			},100);
@@ -97,11 +98,22 @@
 			game.started = true;
 			game.playerTurn = true;
 			socket.emit('custom',{playerId:settings.playerId});
+			this.loadLeaveHandler();
 		};
 		
 		this.join =  function(gameID){
 			location.href="/"+gameID;
+			this.loadLeaveHandler();
 		};
+		
+		this.loadLeaveHandler= function(){
+			window.addEventListener("beforeunload", function(e){
+				socket.emit("leave",{playerId:settings.playerId,boardId:settings.boardId});
+				var message = "Removing you from queue/game";
+    			e.returnValue = message;
+				return message;
+		}, false);
+		}
 	});
 	
 	app.controller("GameController",
@@ -184,7 +196,13 @@
 			game.turn++;
 			controller.checkGameOver();
 		});
+		socket.on('leave',function(msg){
+			alert("A player has left the game");
+			game.playerTurn = false;
+		});
 		}
+		
+		
 	);
 	
 	
