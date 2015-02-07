@@ -43,7 +43,8 @@
 	app.factory('tictactoe',function(){
 		return{
 			lastMove: {x:-1,y:-1},
-			init:function(board,socket){
+			init:function(controller){
+				console.log("Init board");
 				// Set board
 				var array = [3];
 				var id = 0;
@@ -55,27 +56,30 @@
 					}
 				}
 				console.log(array);
-				board = array;
+				controller.view = array;
 				
 			},
-			play:function(board,move,socket){
+			play:function(board,move){
 				if(board[move.x][move.y].square === ""
 				&& !game.over && game.playerTurn){
+					console.log("Valid move");
 					var player =  (game.turn % 2 == 0? "X" : "O");
-					this.playOne(board,player,move);
-					this.checkGameOver(board,socket);
+					return this.playOne(board,player,move);
 				}
 			},
-			playOne:function(board,player,move,socket){
+			playOne:function(board,player,move){
+				console.log("Setting move");
 				board[move.x][move.y].square = player;
 				game.turn++;
 				game.playerTurn = false;
-				this.sendMove(move,settings.boardId,player,socket);
+				this.checkGameOver(board);
+				return this.sendMove(move,settings.boardId,player);
 			},
-			sendMove:function(move,boardId,player,socket){
+			sendMove:function(move,boardId,player){
+				console.log("Sending move");
 				move = {x:move.x,y:move.y,boardId:boardId,playerId:settings.playerId,move:player};
 				this.lastMove = {x:move.x,y:move.y};
-				socket.emit("move",move);
+				return move;
 			},
 			checkGameOver:function(board,socket){
 				var row = board;
@@ -110,7 +114,6 @@
 					});
 				}
 			},
-			sendMove:function(){},
 			checkRow:function(row,x){
 			if(row[x][0].square === row[x][1].square 
 			&& row[x][1].square === row[x][2].square
@@ -219,71 +222,28 @@
 	});
 	
 	app.controller("GameController",
-		function(socket){
+		function(socket,tictactoe){
 		var lastMove = {x:-1,y:-1};
 		var controller=  this;
-		this.view = board;
+		tictactoe.init(this,socket);
+		console.log("view");
+		console.log(this.view);
+		this.getView = function(){
+			return this.view;
+		}
 		this.turn = function(){
 			if(game.playerTurn)
 				return "your turn.";
 			return "your opponent's turn.";
 		}
-		this.play = function(x,y){
-			if(this.view[x][y].square === ""
-			&& !game.over && game.playerTurn){
-				var player =  (game.turn % 2 == 0? "X" : "O");
-				this.playOne(player,x,y);
-				this.checkGameOver();
-			}
-		};
+		this.play = function(move){
+			var msg = tictactoe.play(this.view,move);
+			console.log("msg")
+			console.log(msg);
+			socket.emit("move",msg);
+			
+		}
 		
-		this.playOne = function(player,x,y){
-			console.log(this.view);
-			console.log("X " + x +" Y " + y);
-			this.view[x][y].square = player;
-			game.turn++;
-			game.playerTurn = false;
-			this.sendMove(x,y,settings.boardId,player);
-		};
-		
-		this.sendMove = function(x,y,boardId,player){
-			var move = {x:x,y:y,boardId:boardId,playerId:settings.playerId,move:player};
-			lastMove = {x:x,y:y};
-			socket.emit("move",move);
-		};
-		
-		this.checkGameOver = function(){
-			var row = this.view;
-			var draw = true;
-			for(var x=0; x<3; x++){
-					checkRow(row,x);
-					checkCol(row,x);
-					// Check Draws
-					for(var y=0; y<3; y++){
-						if(row[x][y].square === "")
-							draw = false;
-					}
-			}
-					// Diags
-			checkBackslash(row);
-			checkForwardSlash(row);
-			if(draw)
-				game.over = true;
-			if(game.over){
-				alert("Game is over");
-				socket.emit("end",{playerId:settings.playerId,boardId:settings.boardId});
-				socket.on("reset",function(msg){
-					console.log("Resetting the board");
-					for(var y=0; y<3; y++){
-						for(var x=0; x<3; x++){
-							row[y][x].square = "";
-						}
-					}
-					game.over = false;
-					lastMove = {x:-1,y:-1};
-				});
-			}
-		};
 		socket.on('update',function(msg){
 			console.log("Received a update");
 			console.log(msg);
@@ -297,7 +257,7 @@
 			lastMove = msg;
 			game.playerTurn = true;
 			game.turn++;
-			controller.checkGameOver();
+			tictactoe.checkGameOver();
 		});
 		socket.on('leave',function(msg){
 			alert("A player has left the game");
@@ -311,53 +271,7 @@
 			game.started = false;
 		});
 		}
-		
-		
 	);
-	
-	
-	var board = init();
-	
-	
-	//TODO Move to this to a tictactow module
-	function init(){
-		var array = [3];
-		var id = 0;
-		for(var j=0; j<3; j++){
-			array[j] = [3];
-			for(var i =0; i<3; i++){
-				array[j][i] = {square:"",x:j,y:i};
-				id++;
-			}
-		}
-		console.log(array);
-		return array;
-	};
-	function checkRow(row,x){
-	if(row[x][0].square === row[x][1].square 
-	&& row[x][1].square === row[x][2].square
-	&& row[x][0].square !== "")
-		game.over = true;
-	};
-	function checkCol(row,x){
-		if(row[0][x].square === row[1][x].square
-		&& row[1][x].square === row[2][x].square
-		&& row[0][x].square !== "")
-			game.over = true;
-	};
-	function checkBackslash(row){
-		if(row[0][0].square === row[1][1].square 
-		&& row[1][1].square === row[2][2].square 
-		&& row[0][0].square !== "")
-			game.over = true;
-	};
-			
-	function checkForwardSlash(row){
-		if(row[0][2].square === row[1][1].square 
-		&& row[1][1].square === row[2][0].square 
-		&& row[0][2].square !== "")
-			game.over = true;
-	};
 })();
 
 

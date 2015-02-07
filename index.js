@@ -60,10 +60,12 @@ handle.msg = function(type,socket,msg,board){
         }
         break;
         case 'move':
+            console.log("Recieved update");
             var move ={playerId:msg.playerId,
             x:msg.x,y:msg.y,move:msg.move};
             board.history.push(move);
             board.lastMove = move;
+            console.log(board);
         case 'update':
             var event = board.event.pop();
             if(event !== undefined){
