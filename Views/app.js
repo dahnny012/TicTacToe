@@ -169,18 +169,24 @@
 			init:function(controller){
 				console.log("Init board");
 				var array = new Array(3);
-				array[0] =  {card:"R"};
-				array[1] =  {card:"P"};
-				array[2] =  {card:"S"};
+				array[0] =  {status:"off",index:0,card:"R"};
+				array[1] =  {status:"off",index:1,card:"P"};
+				array[2] =  {status:"off",index:2,card:"S"};
 				controller.view = array;
+				game.playerTurn = true;
 			},
 			play:function(board,move,socket){
-				// Check valid index
-				// HighLight Choice
-				// Send move
+				if(!game.playerTurn)
+					return
+				if(move.card !== "R" || move.card !== "P"|| move.card !== "S")
+					return
+				board[move.index].status = "on";
+				game.playerTurn = false;
+				this.sendMove(move,settings.boardId,settings.playerId,socket);
 			},
-			sendMove:function(move,boardId,player,socket){
-				// Send move to server
+			sendMove:function(move,boardId,playerId,socket){
+				var msg = {move:move,playerId:playerId,boardId:boardId}
+				socket.emit("move",msg);
 			},
 			checkGameOver:function(board,socket){
 				// Check who won
