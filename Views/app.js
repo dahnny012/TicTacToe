@@ -59,27 +59,27 @@
 				controller.view = array;
 				
 			},
-			play:function(board,move){
+			play:function(board,move,socket){
 				if(board[move.x][move.y].square === ""
 				&& !game.over && game.playerTurn){
 					console.log("Valid move");
 					var player =  (game.turn % 2 == 0? "X" : "O");
-					return this.playOne(board,player,move);
+					this.playOne(board,player,move,socket);
 				}
 			},
-			playOne:function(board,player,move){
+			playOne:function(board,player,move,socket){
 				console.log("Setting move");
 				board[move.x][move.y].square = player;
 				game.turn++;
 				game.playerTurn = false;
-				this.checkGameOver(board);
-				return this.sendMove(move,settings.boardId,player);
+				this.checkGameOver(board,socket);
+				this.sendMove(move,settings.boardId,player,socket);
 			},
-			sendMove:function(move,boardId,player){
+			sendMove:function(move,boardId,player,socket){
 				console.log("Sending move");
 				move = {x:move.x,y:move.y,boardId:boardId,playerId:settings.playerId,move:player};
 				this.lastMove = {x:move.x,y:move.y};
-				return move;
+				socket.emit("move",move);
 			},
 			checkGameOver:function(board,socket){
 				var row = board;
@@ -112,6 +112,26 @@
 						game.over = false;
 						tictactoe.lastMove = {x:-1,y:-1};
 					});
+				}
+			},
+			update:function(board,socket,msg){
+				if(msg == undefined)
+					return;
+				if(msg.x == undefined || msg.y == undefined)
+					return;
+				if(this.lastMove.x == msg.x && this.lastMove.y == msg.y)
+					return;
+				board[msg.x][msg.y].square = msg.move;
+				this.lastMove = msg;
+				game.playerTurn = true;
+				game.turn++;
+				this.checkGameOver(board,socket);
+			},
+			reset:function(board){
+				for(var y=0; y<3; y++){
+						for(var x=0; x<3; x++){
+							board[y][x].square = "";
+						}
 				}
 			},
 			checkRow:function(row,x){
@@ -226,8 +246,6 @@
 		var lastMove = {x:-1,y:-1};
 		var controller=  this;
 		tictactoe.init(this,socket);
-		console.log("view");
-		console.log(this.view);
 		this.getView = function(){
 			return this.view;
 		}
@@ -237,36 +255,18 @@
 			return "your opponent's turn.";
 		}
 		this.play = function(move){
-			var msg = tictactoe.play(this.view,move);
-			console.log("msg")
-			console.log(msg);
-			socket.emit("move",msg);
-			
+			tictactoe.play(this.view,move,socket);
 		}
 		
 		socket.on('update',function(msg){
 			console.log("Received a update");
 			console.log(msg);
-			if(msg == undefined)
-				return;
-			if(msg.x == undefined || msg.y == undefined)
-				return;
-			if(lastMove.x == msg.x && lastMove.y == msg.y)
-				return;
-			controller.view[msg.x][msg.y].square = msg.move;
-			lastMove = msg;
-			game.playerTurn = true;
-			game.turn++;
-			tictactoe.checkGameOver();
+			tictactoe.update(controller.view,socket,msg);
 		});
 		socket.on('leave',function(msg){
 			alert("A player has left the game");
 			console.log("Resetting the board");
-			for(var y=0; y<3; y++){
-						for(var x=0; x<3; x++){
-							controller.view[y][x].square = "";
-						}
-			}
+			tictactoe.reset(this.view);
 			game.playerTurn = false;
 			game.started = false;
 		});

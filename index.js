@@ -25,7 +25,6 @@ io.on('connection',function(socket){
    socket.on('sync',function(msg){
        handle.msg('sync',socket,msg);
    })
-   
    socket.on('end',function(msg){
        handle.msg('end',socket,msg);
    });
@@ -60,7 +59,7 @@ handle.msg = function(type,socket,msg,board){
         }
         break;
         case 'move':
-            console.log("Recieved update");
+            console.log("Recieved move command");
             var move ={playerId:msg.playerId,
             x:msg.x,y:msg.y,move:msg.move};
             board.history.push(move);
@@ -87,6 +86,7 @@ handle.msg = function(type,socket,msg,board){
             if(board.getPlayer(msg.playerId) >= 0)
                 board.endCounter++;
             if(board.isEmpty()){
+                console.log("Clearing board")
                 board.clear();
                 console.log(board);
             }
