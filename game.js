@@ -26,11 +26,9 @@ function board(id){
     // moves placed in here.
     this.history = [];
     this.lastMove = undefined;
-    this.endCounter = 0;
     this.clear=  function(){
         this.history = [];
         this.lastMove = undefined;
-        this.endCounter = 0;
     };
     this.removePlayer = function(playerId){
         var index = this.getPlayer(playerId);

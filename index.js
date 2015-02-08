@@ -83,13 +83,7 @@ handle.msg = function(type,socket,msg,board){
             break;
         case 'end':
             console.log("Ending game");
-            if(board.getPlayer(msg.playerId) >= 0)
-                board.endCounter++;
-            if(board.isEmpty()){
-                console.log("Clearing board")
-                board.clear();
-                console.log(board);
-            }
+            board.clear();
             socket.emit("reset");
             break;
     }
