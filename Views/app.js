@@ -4,13 +4,15 @@
 		boardId:document.URL.split("/").pop(),
 		playerId: Math.floor(Math.random()*10000)
 	};
-	
+	var TICTACTOE = 0;
+	var RPS = 1;
 	var game = {
 		started:false,
 		turn:0,
 		playerTurn:false,
 		over:false,
-		inQueue:false
+		inQueue:false,
+		list:[TICTACTOE,RPS]
 	};
 	
 	 
@@ -176,7 +178,7 @@
 		this.msg = "Welcome to TicTacToe online";
 		var controller =  this;
 		var lockout = false;
-
+		var leaveSet = false;
 		socket.on("join",function(msg){
 			console.log(msg);
 			settings.boardId = msg.boardId;
@@ -231,6 +233,9 @@
 		};
 		
 		function setLeave(){
+			if(leaveSet)
+				return;
+			leaveSet = true;
 		window.addEventListener("beforeunload", function(e){
 				lockout = true;
 				socket.emit("leave",{playerId:settings.playerId,boardId:settings.boardId});
@@ -239,37 +244,47 @@
 				return message;
 		}, false);
 		}
+		if(settings.boardId !== ""){
+			setLeave();
+		}
 	});
 	
 	app.controller("GameController",
-		function(socket,tictactoe){
-		var lastMove = {x:-1,y:-1};
-		var controller=  this;
-		tictactoe.init(this,socket);
-		this.getView = function(){
-			return this.view;
-		}
-		this.turn = function(){
-			if(game.playerTurn)
-				return "your turn.";
-			return "your opponent's turn.";
-		}
-		this.play = function(move){
-			tictactoe.play(this.view,move,socket);
-		}
-		
-		socket.on('update',function(msg){
-			console.log("Received a update");
-			console.log(msg);
-			tictactoe.update(controller.view,socket,msg);
-		});
-		socket.on('leave',function(msg){
-			alert("A player has left the game");
-			console.log("Resetting the board");
-			tictactoe.reset(this.view);
-			game.playerTurn = false;
-			game.started = false;
-		});
+		function(socket,tictactoe,rps){
+			var lastMove = {x:-1,y:-1};
+			var controller=  this;
+			this.currentGame = game.list[TICTACTOE];
+			this.games = [tictactoe,rps];
+			this.gameModule = this.games[this.currentGame];
+			this.getView = function(){
+				return this.view;
+			}
+			this.turn = function(){
+				if(game.playerTurn)
+					return "your turn.";
+				return "your opponent's turn.";
+			}
+			this.play = function(move){
+				this.gameModule.play(this.view,move,socket);
+			}
+			
+			socket.on('update',function(msg){
+				console.log("Received a update");
+				console.log(msg);
+				controller.gameModule.update(controller.view,socket,msg);
+			});
+			socket.on('leave',function(msg){
+				alert("A player has left the game");
+				console.log("Resetting the board");
+				controller.gameModule.reset(controller.view);
+				game.playerTurn = false;
+				game.started = false;
+			});
+			
+			this.gameModule.init(this,socket);
+			if(settings.boardId !== ""){
+				socket.emit("update",{boardId:settings.boardId,playerId:settings.playerId});
+			}
 		}
 	);
 })();

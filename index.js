@@ -73,6 +73,7 @@ handle.msg = function(type,socket,msg,board){
                 game.addPlayer(msg.playerId,board,socket);
                 var update= board.lastMove;
                 socket.to(board.id).emit("update",update);
+                socket.emit("update",update);
             }
         break;
         case 'sync':
