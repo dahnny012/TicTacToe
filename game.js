@@ -61,7 +61,7 @@ function addPlayer(playerId,board,socket){
             if(socket !== undefined)
                 socket.join(board.id);
             console.log(board);
-            break;
+            return "added";
         }
     }
     return board;

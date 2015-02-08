@@ -60,8 +60,7 @@ handle.msg = function(type,socket,msg,board){
         break;
         case 'move':
             console.log("Recieved move command");
-            var move ={playerId:msg.playerId,
-            x:msg.x,y:msg.y,move:msg.move};
+            var move ={playerId:msg.playerId,move:msg.move};
             board.history.push(move);
             board.lastMove = move;
             console.log(board);
@@ -70,10 +69,13 @@ handle.msg = function(type,socket,msg,board){
             if(event !== undefined){
                 handle.event(event,socket);
             }else{
-                game.addPlayer(msg.playerId,board,socket);
-                var update= board.lastMove;
-                socket.to(board.id).emit("update",update);
-                socket.emit("update",update);
+                var status = game.addPlayer(msg.playerId,board,socket);
+                var update = board.lastMove;
+                if(status == "added"){
+                    socket.emit("update",update);
+                }else{
+                    socket.to(board.id).emit("update",update);   
+                }
             }
         break;
         case 'sync':

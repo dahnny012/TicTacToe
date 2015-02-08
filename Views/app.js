@@ -12,7 +12,8 @@
 		playerTurn:false,
 		over:false,
 		inQueue:false,
-		list:[TICTACTOE,RPS]
+		list:[TICTACTOE,RPS],
+		lastMove:{x:-1,y:-1}
 	};
 	
 	 
@@ -36,7 +37,7 @@
 	            callback.apply(socket, args);
 	          }
 	        });
-	      })
+	      });
 	    }
 	  };
 	});
@@ -44,7 +45,6 @@
 	
 	app.factory('tictactoe',function(){
 		return{
-			lastMove: {x:-1,y:-1},
 			init:function(controller){
 				console.log("Init board");
 				// Set board
@@ -79,9 +79,9 @@
 			},
 			sendMove:function(move,boardId,player,socket){
 				console.log("Sending move");
-				move = {x:move.x,y:move.y,boardId:boardId,playerId:settings.playerId,move:player};
-				this.lastMove = {x:move.x,y:move.y};
-				socket.emit("move",move);
+				game.lastMove = {x:move.x,y:move.y};
+				var msg = {boardId:boardId,playerId:settings.playerId,move:{x:move.x,y:move.y,value:player}};
+				socket.emit("move",msg);
 			},
 			checkGameOver:function(board,socket){
 				var row = board;
@@ -117,14 +117,16 @@
 				}
 			},
 			update:function(board,socket,msg){
-				if(msg == undefined)
+				if(msg == undefined || msg.move == undefined || msg.move.x == undefined ||
+				msg.move.y == undefined)
 					return;
-				if(msg.x == undefined || msg.y == undefined)
+				if(game.lastMove.x == msg.move.x && game.lastMove.y == msg.move.y)
 					return;
-				if(this.lastMove.x == msg.x && this.lastMove.y == msg.y)
-					return;
-				board[msg.x][msg.y].square = msg.move;
-				this.lastMove = msg;
+				console.log("Msg");
+				console.log(msg);
+				console.log(game.lastMove);
+				board[msg.move.x][msg.move.y].square = msg.move.value;
+				game.lastMove = msg.move;
 				game.playerTurn = true;
 				game.turn++;
 				this.checkGameOver(board,socket);
@@ -269,15 +271,16 @@
 		}, false);
 		}
 		if(settings.boardId !== ""){
+			console.log("board id");
+			console.log(settings.boardId);
 			setLeave();
 		}
 	});
 	
 	app.controller("GameController",
 		function(socket,tictactoe,rps){
-			var lastMove = {x:-1,y:-1};
 			var controller=  this;
-			this.currentGame = game.list[RPS];
+			this.currentGame = game.list[TICTACTOE];
 			this.games = [tictactoe,rps];
 			this.gameModule = this.games[this.currentGame];
 			this.getView = function(){
