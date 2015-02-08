@@ -164,11 +164,35 @@
 	});
 	app.factory('rps',function(){
 		return{
-			init:function(){},
-			play:function(){},
-			playOne:function(){},
-			isOver:function(){},
-			sendMove:function(){}
+			init:function(controller){
+				console.log("Init board");
+				var array = new Array(3);
+				array[0] =  {card:"R"};
+				array[1] =  {card:"P"};
+				array[2] =  {card:"S"};
+				controller.view = array;
+			},
+			play:function(board,move,socket){
+				// Check valid index
+				// HighLight Choice
+				// Send move
+			},
+			sendMove:function(move,boardId,player,socket){
+				// Send move to server
+			},
+			checkGameOver:function(board,socket){
+				// Check who won
+				// alert
+				// send reset
+			},
+			update:function(board,socket,msg){
+				// Highlight opponents card
+				// call checkGameOver
+			},
+			reset:function(board){
+				// Reset what is keeping track of that shit.
+				//
+			}
 		};
 	});
 	
@@ -253,7 +277,7 @@
 		function(socket,tictactoe,rps){
 			var lastMove = {x:-1,y:-1};
 			var controller=  this;
-			this.currentGame = game.list[TICTACTOE];
+			this.currentGame = game.list[RPS];
 			this.games = [tictactoe,rps];
 			this.gameModule = this.games[this.currentGame];
 			this.getView = function(){
