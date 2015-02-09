@@ -179,9 +179,11 @@
 			play:function(board,move,socket){
 				if(!game.playerTurn)
 					return
-				if(move.card !== "R" || move.card !== "P"|| move.card !== "S")
+				console.log(move);
+				if(move.card !== "R" && move.card !== "P" && move.card !== "S")
 					return
 				board[move.index].status = "you";
+				console.log(board);
 				this.bothPlayersPicked++;
 				game.playerTurn = false;
 				this.move = move;
@@ -239,7 +241,7 @@
 	app.controller("StartController",
 	function(socket,$interval){
 		game.started = false;
-		this.msg = "Welcome to TicTacToe online";
+		this.msg = "Welcome to TicTacToe/RockPaperScissors Online";
 		var controller =  this;
 		var lockout = false;
 		var leaveSet = false;
@@ -318,7 +320,7 @@
 	app.controller("GameController",
 		function(socket,tictactoe,rps){
 			var controller=  this;
-			this.currentGame = game.list[TICTACTOE];
+			this.currentGame = game.list[RPS];
 			this.games = [tictactoe,rps];
 			this.gameModule = this.games[this.currentGame];
 			this.getView = function(){
@@ -330,11 +332,14 @@
 				return "your opponent's turn.";
 			}
 			this.play = function(move){
+				console.log("this triggered");
 				this.gameModule.play(this.view,move,socket);
 			}
 			
 			// Play when both sent moves.
 			socket.on('end wait',function(msg){
+				console.log("Recieved end wait");
+				console.log(msg);
 				controller.gameModule.update(controller.view,socket,msg);
 			});
 		
@@ -342,6 +347,8 @@
 			socket.on('update',function(msg){
 				console.log("Received a update");
 				console.log(msg);
+				if(msg == null)
+					return;
 				controller.gameModule.update(controller.view,socket,msg);
 			});
 			socket.on('leave',function(msg){

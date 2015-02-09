@@ -84,9 +84,12 @@ handle.msg = function(type,socket,msg,board){
         case 'wait':
             console.log("Waiting for both players");
             board.history.push(msg);
+            console.log(board);
             if(board.history.length >= msg.wait){
                 socket.to(board.id).emit("end wait",{board:board.history});
+                socket.emit("end wait",{board:board.history});
             }
+            break;
         case 'sync':
             console.log("sending sync");
             console.log("player "+ msg.playerId);
@@ -145,6 +148,7 @@ handle.disconnect = function(event,socket,msg){
             console.log("Searching if player in game: " + msg.boardId);
             var board = game.searchGame(msg.boardId);
             if(board !== undefined){
+                console.log("killing board");
                 board.removePlayer(msg.playerId);
                 handle.kill(msg.boardId);
                 socket.to(board.id).emit("leave");

@@ -93,3 +93,12 @@ padding-bottom:5%;
 .card{
 	height:150px;
 }
+.off{
+
+}
+.you{
+	background:green;	
+}
+.opponent{
+	background:red;
+}
