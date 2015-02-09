@@ -35,7 +35,7 @@
 						</div>
 					</section>
 					<section id="rps" ng-show="app.currentGame == 1">
-						<div class="card" ng-repeat="cards in app.getView()" ng-click="app.play({card:cards})">
+						<div ng-class="{card:true,cards.status:true}" ng-repeat="cards in app.getView()" ng-click="app.play({card:cards})">
 								{{cards.card}}
 						</div>
 					</section>

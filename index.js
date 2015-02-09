@@ -35,6 +35,9 @@ io.on('connection',function(socket){
    socket.on('leave',function(msg){
        handle.disconnect('leave',socket,msg);
    });
+   socket.on('wait',function(msg){
+       handle.msg('wait',socket,msg);
+   })
 });
 
 var handle = {};
@@ -78,6 +81,12 @@ handle.msg = function(type,socket,msg,board){
                 }
             }
         break;
+        case 'wait':
+            console.log("Waiting for both players");
+            board.history.push(msg);
+            if(board.history.length >= msg.wait){
+                socket.to(board.id).emit("end wait",{board:board.history});
+            }
         case 'sync':
             console.log("sending sync");
             console.log("player "+ msg.playerId);

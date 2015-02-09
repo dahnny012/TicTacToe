@@ -166,6 +166,7 @@
 	});
 	app.factory('rps',function(){
 		return{
+			move:{},
 			init:function(controller){
 				console.log("Init board");
 				var array = new Array(3);
@@ -180,26 +181,57 @@
 					return
 				if(move.card !== "R" || move.card !== "P"|| move.card !== "S")
 					return
-				board[move.index].status = "on";
+				board[move.index].status = "you";
+				this.bothPlayersPicked++;
 				game.playerTurn = false;
+				this.move = move;
 				this.sendMove(move,settings.boardId,settings.playerId,socket);
 			},
 			sendMove:function(move,boardId,playerId,socket){
-				var msg = {move:move,playerId:playerId,boardId:boardId}
-				socket.emit("move",msg);
+				var msg = {move:move,playerId:playerId,boardId:boardId,wait:2};
+				socket.emit("wait",msg);
 			},
-			checkGameOver:function(board,socket){
-				// Check who won
-				// alert
-				// send reset
+			compare:function(board,socket,msg){
+				if(this.move.card == msg.move.card)
+					return "draw";
+				switch(this.move.card){
+					case 'R':
+						if(msg.move.card === "S"){
+							alert("You win");
+							return;
+						}
+					case 'P':
+						if(msg.move.card === "R"){
+							alert("You win");
+							return;
+						}
+
+					case 'S':
+						if(msg.move.card === "P"){
+							alert("You win");
+							return;
+						}
+				}
+				alert("You lost");
+				this.reset(board);
 			},
 			update:function(board,socket,msg){
-				// Highlight opponents card
-				// call checkGameOver
+				var history = msg.board;
+				var opponent;
+				for(var i=0; i<2; i++){
+					if(history[i].playerId !== settings.playerId){
+						opponent=history[i];
+						board[opponent.move.index].status = "opponent";
+						break;
+					}
+				}
+				this.compare(board,socket,opponent);
 			},
 			reset:function(board){
-				// Reset what is keeping track of that shit.
-				//
+				this.move = {};
+				board[0].status = "off";
+				board[1].status = "off";
+				board[2].status = "off";
 			}
 		};
 	});
@@ -301,6 +333,12 @@
 				this.gameModule.play(this.view,move,socket);
 			}
 			
+			// Play when both sent moves.
+			socket.on('end wait',function(msg){
+				controller.gameModule.update(controller.view,socket,msg);
+			});
+		
+			// Update when both send moves.
 			socket.on('update',function(msg){
 				console.log("Received a update");
 				console.log(msg);
