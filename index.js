@@ -86,8 +86,7 @@ handle.msg = function(type,socket,msg,board){
             board.history.push(msg);
             console.log(board);
             if(board.history.length >= msg.wait){
-                socket.to(board.id).emit("end wait",{board:board.history});
-                socket.emit("end wait",{board:board.history});
+                io.to(board.id).emit("end wait",{board:board.history});
             }
             break;
         case 'sync':

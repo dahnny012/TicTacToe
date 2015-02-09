@@ -196,26 +196,30 @@
 			compare:function(board,socket,msg){
 				if(this.move.card == msg.move.card)
 					return "draw";
+				var status = "lost";
 				switch(this.move.card){
 					case 'R':
 						if(msg.move.card === "S"){
-							alert("You win");
-							return;
+							status = "win"
 						}
+						break;
 					case 'P':
 						if(msg.move.card === "R"){
-							alert("You win");
-							return;
+							status= "win";
 						}
-
+						break
 					case 'S':
 						if(msg.move.card === "P"){
-							alert("You win");
-							return;
+							status = "win";
 						}
+						break;
 				}
-				alert("You lost");
-				this.reset(board);
+				alert("You " + status );
+				socket.emit("end",{playerId:settings.playerId,boardId:settings.boardId});
+				var rps = this;
+				socket.on("reset",function(msg){
+					rps.reset(board);
+				});
 			},
 			update:function(board,socket,msg){
 				var history = msg.board;
@@ -230,6 +234,7 @@
 				this.compare(board,socket,opponent);
 			},
 			reset:function(board){
+				game.playerTurn = true;
 				this.move = {};
 				board[0].status = "off";
 				board[1].status = "off";
