@@ -3,7 +3,6 @@ var queueLock = false;
 function getQueue(){
     if(queue === undefined)
         queue = new makeQueue();
-    setInterval(manageQueue,500,queue);
     return queue;
 };
 
@@ -43,6 +42,7 @@ function findOpponent(queue,playerId){
                 opp = queue.players.splice(i,1);
                 var playerIndex = queue.players.indexOf(playerId);
                 queue.kick(playerIndex);
+                queue.kick(opp[0]);
                 break;
             }
         }
@@ -77,7 +77,9 @@ function removeFromQueue(queue,playerId){
         console.log("Removing from queue : " + playerId);
         var index = queue.players.indexOf(playerId);
         if(index != -1){
+            console.log("player found")
             queue.kick(index);
+            queue.matches[playerId] = undefined;
         }
         releaseLock();
     }else{

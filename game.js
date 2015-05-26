@@ -4,8 +4,9 @@ function randomNum(){
 }
 function newGame(){
     var id = randomNum();
-    if(boards[id] === undefined)
-     boards[id] = new board(id);
+    while(boards[id] !== undefined)
+        id = randomNum();
+    boards[id] = new board(id);
     return boards[id];
 };
 
@@ -25,11 +26,9 @@ function board(id){
     // moves placed in here.
     this.history = [];
     this.lastMove = undefined;
-    this.endCounter = 0;
     this.clear=  function(){
         this.history = [];
         this.lastMove = undefined;
-        this.endCounter = 0;
     };
     this.removePlayer = function(playerId){
         var index = this.getPlayer(playerId);
@@ -45,18 +44,24 @@ function board(id){
         this.players.splice(index,1);
     }
     this.event = [];
+    this.isEmpty = function(){
+        return this.players[0] == undefined 
+        && this.players[1] == undefined
+    }
     return this;
 };
 
-function addPlayer(playerId,board){
+function addPlayer(playerId,board,socket){
     if(board.players.indexOf(playerId) !== -1)
         return board;
     for(var i=0; i<2; i++){
         if(board.players[i] === undefined){
             console.log("Adding player");
             board.players[i] = playerId;
+            if(socket !== undefined)
+                socket.join(board.id);
             console.log(board);
-            break;
+            return "added";
         }
     }
     return board;

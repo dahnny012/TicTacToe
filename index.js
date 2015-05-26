@@ -1,211 +1,204 @@
-var http = require("http");
+var app = require("express")()
+var http = require("http").Server(app)
 var fs = require("fs");
 var url = require("url");
 var game = require("./game");
 var formidable = require("formidable");
 var queue = require("./queue");
-var MAXPLAYERS = 2;
-http.createServer(function(req,res){
-    var reqUrl = url.parse(req.url);
-    console.log(reqUrl.path);
-    if(routes[reqUrl.path] === undefined){
-        console.log("Undefined Route");
-        reqUrl.path = makeRelative(reqUrl.path);
-        fs.readFile(reqUrl.path,function(err,data){
-            if(err){
-                console.log(err);
-                res.writeHead(404,"text/plain");
-                res.end("Page not found");
+var io = require("socket.io")(http);
+var INPROGRESS = 1;
+
+
+
+// Redirects io events to handlers
+io.on('connection',function(socket){
+   socket.on('custom',function(msg){
+        var board = game.newGame();
+        handle.msg('custom',socket,msg,board);
+   });
+   socket.on('move',function(msg){
+       handle.msg('move',socket,msg);
+   });
+   socket.on('update',function(msg) {
+       handle.msg('update',socket,msg);
+   });
+   socket.on('sync',function(msg){
+       handle.msg('sync',socket,msg);
+   })
+   socket.on('end',function(msg){
+       handle.msg('end',socket,msg);
+   });
+   
+   socket.on('queue',function(msg){
+       handle.queue('queue',socket,msg); 
+   });
+   socket.on('leave',function(msg){
+       handle.disconnect('leave',socket,msg);
+   });
+   socket.on('wait',function(msg){
+       handle.msg('wait',socket,msg);
+   })
+});
+
+var handle = {};
+handle.game = function(req,res){
+    fs.readFile('Views/index.html',function(err,data){
+        res.writeHead(200,mimeType("index.html"));
+        res.end(data);
+    });
+};
+handle.msg = function(type,socket,msg,board){
+    if(board == undefined)
+        board = game.searchGame(msg.boardId);
+    switch(type){
+        case 'custom':
+            game.addPlayer(msg.playerId,board);
+            if(routes['/'+board.id] === undefined){
+                app.get("/"+board.id,handle.game);
+                routes['/'+board.id] = INPROGRESS;
+                console.log(board);
+                socket.emit("join",{boardId:board.id});
+                socket.join(board.id);
+        }
+        break;
+        case 'move':
+            console.log("Recieved move command");
+            var move ={playerId:msg.playerId,move:msg.move};
+            board.history.push(move);
+            board.lastMove = move;
+            console.log(board);
+        case 'update':
+            var event = board.event.pop();
+            if(event !== undefined){
+                handle.event(event,socket);
+            }else{
+                var status = game.addPlayer(msg.playerId,board,socket);
+                var update = board.lastMove;
+                if(status == "added"){
+                    socket.emit("update",update);
+                }else{
+                    socket.to(board.id).emit("update",update);   
+                }
             }
-            res.writeHead(200,mimeType(reqUrl.path));
-            res.end(data);
-        });
-        return;
+        break;
+        case 'wait':
+            console.log("Waiting for both players");
+            board.history.push(msg);
+            console.log(board);
+            if(board.history.length >= msg.wait){
+                io.to(board.id).emit("end wait",{board:board.history});
+            }
+            break;
+        case 'sync':
+            console.log("sending sync");
+            console.log("player "+ msg.playerId);
+            game.addPlayer(msg.playerId,board);
+            socket.emit("sync",board.history);
+            break;
+        case 'end':
+            console.log("Ending game");
+            board.clear();
+            socket.emit("reset");
+            break;
     }
-    console.log("Found a route");
-    routes[reqUrl.path](req,res);
-}).listen(80);
+    return 1;
+}
 
 
-
-/// Routes
-var routes = {};
-routes.kill = function(id){
-    if(id[0] !== "/")
-        id = "/" + id;
-    console.log("Killing route " + id);
-    routes[id] = undefined;
-};
-
-routes['/'] = function(req,res){
-  fs.readFile('Views/index.html',function(err,data){
-      res.writeHead(200,mimeType("index.html"));
-      res.end(data);
-  });  
-};
-
-routes['/leave'] = function(req,res){
-    console.log("Player sent a leave");
-    var form = new formidable.IncomingForm();
-    form.parse(req,function(error,fields){
-        if(error)
+handle.queue = function(type,socket,msg){
+    console.log("Player queuing " + msg.playerId);
+     var current = queue.getQueue();
+     // If you havent found a match add yourself.
+        if(current.matches[msg.playerId] === undefined){
+            current.addPlayer(msg.playerId);
+        }
+        else{
+            console.log("Other player found match");
+            var info = {boardId:current.matches[msg.playerId]};
+            current.matches[msg.playerId] = undefined;
+            socket.join(info.boardId);
+            socket.emit("found match",info);
             return;
-        queue.removeFromQueue(queue.getQueue(),fields.playerId);
-        if(fields.boardId !== undefined && fields.boardId !== "/"){
-            console.log("Searching if player in game: " + fields.boardId);
-            var board = game.searchGame(fields.boardId);
-            // If game was found
+        }
+        console.log("In Queue");
+        console.log(current.players);
+        console.log(current.matches);
+        var search = queue.findOpponent(current,msg.playerId);
+        if(search.length > 0){
+            console.log("FOUND A MATCH");
+            var board = game.newGame();
+            if(routes['/'+board.id] === undefined){
+                app.get("/"+board.id ,handle.game);
+                console.log("Creating a route");
+            }
+            current.addMatches(board.id,msg.playerId,search.pop());
+            current.matches[msg.playerId] = undefined;
+            info = {playerToStart:msg.playerId,boardId:board.id};
+            socket.join(info.boardId);
+            socket.emit("found match",info);
+        }
+}
+
+
+handle.disconnect = function(event,socket,msg){
+    console.log("Player sent a leave");
+        queue.removeFromQueue(queue.getQueue(),msg.playerId);
+        if(msg.boardId !== undefined && msg.boardId !== "/"){
+            console.log("Searching if player in game: " + msg.boardId);
+            var board = game.searchGame(msg.boardId);
             if(board !== undefined){
-                board.removePlayer(fields.playerId);
-                // Set a event in game.
-                if(board.players.length < 1)
-                    routes.kill(fields.boardId);
-                board.event.push({type:"leave",playerId:fields.playerId});
+                console.log("killing board");
+                board.removePlayer(msg.playerId);
+                handle.kill(msg.boardId);
+                socket.to(board.id).emit("leave");
+                socket.leave(board.id);
             }
             else{
                 console.log("player was not in game");
             }
         }
-        res.end("");
-    });
-};
-
-
-routes['/start'] = function(req,res){
-    var board = game.newGame();
-    var form = new formidable.IncomingForm();
-    form.parse(req,function(error,fields){
-        if(error)
-            return;
-        game.addPlayer(fields.playerId,board);
-    });
-    if(routes['/'+board.id] === undefined){
-        routes['/'+board.id] = handleGame;
-        console.log("New Board");
-        console.log(board);
-    }
-    res.end(board.id.toString());
-};
-
-routes['/search'] = function(req,res){
-    var form = new formidable.IncomingForm();
-    form.parse(req,function(error,fields){
-        if(error)
-            return;
-        // Get Queue
-        var current = queue.getQueue();
-        // If you havent found a match add yourself.
-        if(current.matches[fields.playerId] === undefined){
-            current.addPlayer(fields.playerId);
-        }
-        // If a match was found write i found one and give u the info.
-        else{
-            console.log("Other player found match");
-            var info = {boardId:current.matches[fields.playerId]};
-            current.matches[fields.playerId] = undefined;
-            res.end(JSON.stringify(info));
-        }
-        console.log("In Queue");
-        console.log(current.players);
-        console.log(current.matches);
-        // Search for someone.
-        var search = queue.findOpponent(current,fields.playerId);
-        if(search.length > 0){
-            console.log("FOUND A MATCH");
-            var board = game.newGame();
-            if(routes['/'+board.id] === undefined){
-                routes['/'+board.id] = handleGame;
-                console.log("Creating a route");
-                console.log(this['/'+board.id]);
-            }
-            
-            current.addMatches(board.id,fields.playerId,search.pop());
-            info = {playerToStart:fields.playerId,boardId:board.id};
-            res.end(JSON.stringify(info));
-        }else{
-            res.end("Finding");
-        }
-    });
-
-};
-
-
-
-function handlePost(error,fields,board,res){
-    if(error)
-        return;
-    switch(fields.type){
-        case "move":
-            console.log("Making a move on board");
-            var move ={playerId:fields.playerId,
-            x:fields.x,y:fields.y,move:fields.move};
-            board.history.push(move);
-            board.lastMove = move;
-            res.end("Move ok");
-            break;
-        case "update":
-            //console.log("sending update");
-            res.writeHead(200,"application/json");
-            // Temporary.
-            var event = board.event.pop();
-            if(event !== undefined){
-                handleEvent(event,res);
-            }else{
-                game.addPlayer(fields.playerId,board);
-                res.end(JSON.stringify(board.lastMove));
-            }
-            break;
-        case "sync":
-            console.log("sending sync");
-            console.log("player "+ fields.playerId);
-            game.addPlayer(fields.playerId,board);
-            res.writeHead(200,"application/json");
-            console.log(JSON.stringify(board.history));
-            res.end(JSON.stringify(board.history));
-            break;
-        case "end":
-            console.log("Ending game");
-            if(board.getPlayer(fields.playerId) >= 0)
-                board.endCounter++;
-            if(board.endCounter >= MAXPLAYERS){
-                console.log("Clearing");
-                board.clear();
-            }
-            res.end("End");
-    }
-    //console.log(board);
 }
 
-function handleEvent(event,res){
+
+handle.event = function (event,socket){
     switch(event.type){
         case 'leave':
             var msg = {event:event.type};
-            res.end(JSON.stringify(msg));
+            socket.emit('leave',msg);
             break;
     }
 }
 
+handle.kill = function(board){
+    routes["/"+board.id]=  undefined;
+    board = undefined;
+}
 
-function handleGame(req,res){
-    var reqUrl = url.parse(req.url);
-    var board = game.searchGame(reqUrl.path);
-    //console.log(board);
-    var form = new formidable.IncomingForm();
-    //console.log(req.method);
-    if(req.method === 'POST'){
-        form.parse(req,function(error,fields){
-            handlePost(error,fields,board,res);
-        });
-    }
-    else{
+
+http.listen("80",function(){
+    app.get("/",function(req,res){
         fs.readFile('Views/index.html',function(err,data){
-            res.writeHead(200,mimeType("index.html"));
-            res.end(data);
-        });
-    }
-};
+        res.writeHead(200,mimeType("index.html"));
+        res.end(data);
+    });});
+    app.get("/Views/app.js",function(req,res){
+        fs.readFile('Views/app.js',function(err,data){
+        res.writeHead(200,mimeType("app.js"));
+        res.end(data);
+    });}); 
+    app.get("/Views/app.css",function(req,res){
+        fs.readFile('Views/app.css',function(err,data){
+        res.writeHead(200,mimeType("app.css"));
+        res.end(data);
+    });}); 
+
+   
+});
 
 
+
+/// Routes
+var routes = {};
 
 //// Utils
 function mimeType(link){

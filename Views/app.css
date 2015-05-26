@@ -1,18 +1,104 @@
 body{
 	padding:0;
 	margin:0;
+	font-family:'Ubuntu';
 }
+
+#header{
+	padding-top:1%;
+	font-size:48px;
+	color:white;
+	background:#285A7A;
+}
+
+#navbar{
+	margin-top:10px;
+	margin-right:auto;
+	margin-left:auto;
+	width:315;
+}
+	#queue,#custom,#join{
+		font-family: 'Source Sans Pro', sans-serif;
+		width: 315px;
+		height: 50px;
+		font-size: 18px;
+		line-height: 19px;
+		color: black;
+		background: #125C8C;
+		border-style: solid;
+		border-width: 1px;
+		border-color: black;
+		color: white;
+		cursor:pointer;
+	}
+	#joinBoard{
+		height: 60px;
+		width: 210px;
+		font-size: 20px;
+		font-family: 'Source Sans Pro', sans-serif;
+		-webkit-appearance: textfield;
+		background: white;
+		padding: 0px;
+		box-shadow: none;
+		border: none;
+		border-radius: 0px;
+		border-bottom: 1px solid #488BB5;
+	}
+	
+	#join{
+		width:100px;
+	}
+#start-wrapper{
+	
+}
+
+#board{
+padding-top:2%;
+padding-bottom:5%;
+}
+#info{
+	margin-left:auto;
+	margin-right:auto;
+	width:315px;
+	font-size:16px;
+}
+	.yes{
+		color:green;
+	}
+	.no{
+		color:red;
+	}
 
 .row{
-	clear:left;
+	margin-left: auto;
+    margin-right: auto;
+    width:315px;
 }
 
-.box{
-	width:10%;
-	height:20%;
-	float:left;
+#rps{
+	margin-left: auto;
+    margin-right: auto;
+    width:315px;
+}
+.box,.card{
+	vertical-align: top;
+	display: inline-block;
+	width:100px;
+	height:100px;
 	border:2px solid black;
 	text-align:center;
 	font-size:60px;
-	
+}
+
+.card{
+	height:150px;
+}
+.off{
+
+}
+.you{
+	background:green;	
+}
+.opponent{
+	background:red;
 }
